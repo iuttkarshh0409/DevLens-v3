@@ -49,6 +49,22 @@ async def analyze_repository(request: AnalyzeRequest):
     analysis = await audit_service.run_audit_flow(request.repo_url)
     return analysis
 
+from app.jobs import shared_queue
+
+@app.get("/jobs/health")
+async def jobs_health(job_id: Optional[str] = None):
+    metrics = shared_queue.get_metrics()
+    status_info = None
+    if job_id:
+        status_info = shared_queue.status(job_id)
+        
+    return {
+        "status": "healthy",
+        "redis_connected": shared_queue.active,
+        "metrics": metrics,
+        "queried_job_status": status_info
+    }
+
 @app.get("/app/install")
 async def app_install():
     # Redirect directly to GitHub App installation flow

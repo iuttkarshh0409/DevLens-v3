@@ -60,8 +60,6 @@ async def receive_webhook(
                 logger.info(f"Skipped push event for {event.repository.full_name} (Archived/Forked)")
                 return {"status": "skipped", "reason": "Archived or fork repository."}
             
-            # Execute audit synchronously
-            # Create a mock repo data block from event parameters
             repo_data = {
                 "name": event.repository.name,
                 "stars": 0,
@@ -69,8 +67,22 @@ async def receive_webhook(
                 "readme": "README placeholder",
                 "files": ["package.json"]  # Minimal mock files structure
             }
-            await pipeline.execute_audit(repo_data)
-            return {"status": "success", "event": "push", "audited": event.repository.full_name}
+            
+            from app.jobs import shared_queue
+            from app.jobs.models import AuditJob
+            import uuid
+            
+            job = AuditJob(
+                job_id=str(uuid.uuid4()),
+                repo_data=repo_data
+            )
+            shared_queue.enqueue(job)
+            return {
+                "status": "enqueued",
+                "event": "push",
+                "job_id": job.job_id,
+                "audited": event.repository.full_name
+            }
             
         elif x_github_event == "pull_request":
             event = PullRequestEvent(**data)

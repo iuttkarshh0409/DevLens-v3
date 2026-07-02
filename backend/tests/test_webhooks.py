@@ -77,8 +77,11 @@ class TestWebhooks(unittest.TestCase):
         }
         res = self.client.post("/github/webhook", content=payload, headers=headers)
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.json()["status"], "success")
-        mock_audit.assert_called_once()
+        self.assertEqual(res.json()["status"], "enqueued")
+        
+        from app.jobs import shared_queue
+        # Assert the job has been queued in fallback memory queue
+        self.assertGreaterEqual(len(shared_queue.fallback.queue), 1)
 
     @patch("app.webhooks.router.GITHUB_WEBHOOK_SECRET", "test_webhook_secret_key")
     def test_push_event_skipped_for_forks(self):
