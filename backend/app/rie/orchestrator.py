@@ -1,5 +1,7 @@
-from typing import Dict, Any
+from typing import Dict, Any, Union
 from app.models.analysis import EvidenceGraph, RepositoryMetadata, RepositoryAnalysis
+from app.models.github import RepositorySnapshot
+from app.rie.builder import EvidenceGraphBuilder
 from app.rie.base import AnalyzerContext
 from app.rie.registry import registry
 
@@ -8,20 +10,14 @@ import app.rie
 
 class AnalysisOrchestrator:
     @staticmethod
-    def run_analysis(repo_data: Dict[str, Any]) -> RepositoryAnalysis:
-        # 1. Build RepositoryMetadata
-        metadata = RepositoryMetadata(
-            name=repo_data.get("name", "unknown"),
-            stars=repo_data.get("stars", 0),
-            last_updated=repo_data.get("last_updated", "")
-        )
+    def run_analysis(repo_data: Union[Dict[str, Any], RepositorySnapshot]) -> RepositoryAnalysis:
+        if isinstance(repo_data, dict):
+            snapshot = RepositorySnapshot(**repo_data)
+        else:
+            snapshot = repo_data
 
-        # 2. Construct EvidenceGraph
-        evidence_graph = EvidenceGraph(
-            metadata=metadata,
-            files=repo_data.get("files", []),
-            readme=repo_data.get("readme", "")
-        )
+        # 1. Build construction graph via Builder DTO
+        evidence_graph = EvidenceGraphBuilder.build_evidence_graph(snapshot)
 
         # 3. Create AnalyzerContext
         context = AnalyzerContext(evidence_graph=evidence_graph)
@@ -34,7 +30,7 @@ class AnalysisOrchestrator:
 
         # 5. Return compiled RepositoryAnalysis
         return RepositoryAnalysis(
-            repo_name=metadata.name,
+            repo_name=evidence_graph.metadata.name,
             evidence_graph=evidence_graph,
             results=results
         )

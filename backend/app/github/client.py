@@ -8,6 +8,8 @@ from fastapi import HTTPException
 from app.core.config import GITHUB_TOKEN, GITHUB_APP_ID, GITHUB_APP_PRIVATE_KEY
 from app.core.logging import logger
 
+from app.models.github import RepositorySnapshot
+
 def generate_app_jwt() -> str:
     """Generates a signed JWT for authenticating as the GitHub App."""
     if not GITHUB_APP_ID or not GITHUB_APP_PRIVATE_KEY:
@@ -59,7 +61,7 @@ class GitHubClient:
             
         return headers
 
-    async def fetch(self, owner: str, repo: str) -> Dict[str, Any]:
+    async def fetch(self, owner: str, repo: str) -> RepositorySnapshot:
         headers = await self.get_headers()
         async with httpx.AsyncClient(timeout=10.0) as client:
             try:
@@ -100,12 +102,12 @@ class GitHubClient:
                     data = cont_res.json()
                     files = [f['name'] for f in data] if isinstance(data, list) else []
 
-                return {
-                    "name": meta.get("name"),
-                    "stars": meta.get("stargazers_count", 0),
-                    "last_updated": meta.get("updated_at", ""),
-                    "readme": readme[:3500],
-                    "files": files[:20]
-                }
+                return RepositorySnapshot(
+                    name=meta.get("name", "Unknown"),
+                    stars=meta.get("stargazers_count", 0),
+                    last_updated=meta.get("updated_at", ""),
+                    readme=readme[:3500],
+                    files=files[:20]
+                )
             except httpx.HTTPError:
                 raise HTTPException(status_code=502, detail="Upstream GitHub API failure.")

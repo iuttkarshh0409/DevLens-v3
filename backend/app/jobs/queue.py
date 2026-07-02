@@ -61,12 +61,16 @@ class InMemoryQueue(BaseQueue):
 
 class RedisQueue(BaseQueue):
     def __init__(self, host: str = "localhost", port: int = 6379, db: int = 0):
-        # Allow connecting, gracefully falling back to InMemory if Redis is offline
+        # Allow connecting, gracefully falling back to InMemory if Redis is offline (only in non-prod)
+        import os
+        is_prod = os.getenv("ENV") == "production"
         try:
             self.client = redis.Redis(host=host, port=port, db=db, socket_timeout=2.0)
             self.client.ping()
             self.active = True
-        except Exception:
+        except Exception as e:
+            if is_prod:
+                raise RuntimeError(f"Failed to connect to Redis in production: {str(e)}")
             self.active = False
             self.fallback = InMemoryQueue()
             
