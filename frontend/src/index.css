@@ -1,36 +1,60 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@200;300;400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --font-family-primary: 'Inter', sans-serif;
+    --color-text-primary: #fafafa;
+    --color-text-secondary: #a6a6a6;
+    --color-text-inverse: #9ca3af;
+    --color-surface-base: #000000;
+    --color-surface-muted: #1a1a1a;
+    --color-border-default: #333333;
+    --color-border-strong: #2e2e2e;
+    --color-border-muted: #995cd6;
+    
+    --radius-xs: 10px;
+    --radius-sm: 12px;
+    --radius-md: 16px;
+    --radius-lg: 24px;
+    --radius-xl: 9999px;
+  }
+
   body {
     margin: 0;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background-color: #050505;
-    color: #A1A1AA;
-    font-family: 'IBM Plex Sans', sans-serif;
+    background-color: var(--color-surface-base);
+    color: var(--color-text-secondary);
+    font-family: var(--font-family-primary);
+  }
+
+  /* Focus Visible Outline Rules for WCAG 2.2 AA accessibility */
+  *:focus-visible {
+    outline: 2px solid var(--color-border-muted) !important;
+    outline-offset: 2px !important;
   }
 
   /* Custom Selection Color */
   ::selection {
-    background-color: rgba(16, 185, 129, 0.2);
-    color: #34D399;
+    background-color: rgba(153, 92, 214, 0.2);
+    color: #fafafa;
   }
 }
 
 @layer utilities {
   .glass {
-    background: rgba(255, 255, 255, 0.02);
+    background: rgba(26, 26, 26, 0.5);
     backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--color-border-default);
   }
 
   .glass-hover:hover {
-    background: rgba(255, 255, 255, 0.04);
-    border-color: rgba(16, 185, 129, 0.30);
+    background: rgba(26, 26, 26, 0.8);
+    border-color: var(--color-border-muted);
   }
 
   .scanlines {
@@ -43,7 +67,7 @@
     display: block;
     position: absolute;
     top: 0; left: 0; bottom: 0; right: 0;
-    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(153, 92, 214, 0.03), rgba(26, 26, 26, 0.02), rgba(153, 92, 214, 0.03));
     z-index: 2;
     background-size: 100% 2px, 3px 100%;
     pointer-events: none;
@@ -56,7 +80,7 @@
 
 @keyframes blink {
   from, to { border-color: transparent }
-  50% { border-color: #10B981; }
+  50% { border-color: var(--color-border-muted); }
 }
 
 /* Custom Scrollbar for a sleek terminal feel */
@@ -65,13 +89,14 @@
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #050505;
+  background: var(--color-surface-base);
 }
 ::-webkit-scrollbar-thumb {
-  background: #27272A;
+  background: var(--color-border-strong);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #10B981;
+  background: var(--color-border-muted);
 }
+
 

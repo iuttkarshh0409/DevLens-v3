@@ -44,15 +44,15 @@ export default function MeshBackground() {
   return (
     <div className="fixed inset-0 w-full h-full overflow-hidden pointer-events-none z-0">
       {/* 1. Void base */}
-      <div className="absolute inset-0 bg-[#050505]" />
+      <div className="absolute inset-0 bg-[#000000]" />
 
       {/* 2. Lattice grid */}
       <div 
         className="absolute inset-0 opacity-70"
         style={{
           backgroundImage: `
-            linear-gradient(rgba(16, 185, 129, 0.06) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(16, 185, 129, 0.06) 1px, transparent 1px)
+            linear-gradient(rgba(153, 92, 214, 0.04) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(153, 92, 214, 0.04) 1px, transparent 1px)
           `,
           backgroundSize: '60px 60px',
           maskImage: 'radial-gradient(circle at center, black 30%, transparent 85%)',
@@ -62,32 +62,32 @@ export default function MeshBackground() {
 
       {/* 3. Three drifting radial orbs */}
       <div className="absolute inset-0 overflow-hidden">
-        {/* Orb 1 — Emerald */}
+        {/* Orb 1 — Purple */}
         <motion.div
           animate={orb1Animate}
           className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] max-w-[500px] max-h-[500px] rounded-full"
           style={{
-            background: 'radial-gradient(circle, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0) 70%)',
+            background: 'radial-gradient(circle, rgba(153, 92, 214, 0.12) 0%, rgba(153, 92, 214, 0) 70%)',
             filter: 'blur(80px)',
           }}
         />
 
-        {/* Orb 2 — Sky */}
+        {/* Orb 2 — Dark Sky */}
         <motion.div
           animate={orb2Animate}
           className="absolute top-[20%] right-[-10%] w-[45vw] h-[45vw] max-w-[450px] max-h-[450px] rounded-full"
           style={{
-            background: 'radial-gradient(circle, rgba(56, 189, 248, 0.12) 0%, rgba(56, 189, 248, 0) 70%)',
+            background: 'radial-gradient(circle, rgba(56, 189, 248, 0.08) 0%, rgba(56, 189, 248, 0) 70%)',
             filter: 'blur(90px)',
           }}
         />
 
-        {/* Orb 3 — Indigo */}
+        {/* Orb 3 — Dark Purple/Muted */}
         <motion.div
           animate={orb3Animate}
           className="absolute bottom-[-10%] left-[10%] w-[45vw] h-[45vw] max-w-[450px] max-h-[450px] rounded-full"
           style={{
-            background: 'radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, rgba(99, 102, 241, 0) 70%)',
+            background: 'radial-gradient(circle, rgba(128, 90, 213, 0.08) 0%, rgba(128, 90, 213, 0) 70%)',
             filter: 'blur(100px)',
           }}
         />
@@ -105,9 +105,10 @@ export default function MeshBackground() {
       <div 
         className="absolute inset-0"
         style={{
-          background: 'radial-gradient(circle at center, transparent 40%, rgba(0, 0, 0, 0.7) 100%)'
+          background: 'radial-gradient(circle at center, transparent 40%, rgba(0, 0, 0, 0.8) 100%)'
         }}
       />
     </div>
   );
 }
+
