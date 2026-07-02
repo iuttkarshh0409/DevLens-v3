@@ -7,8 +7,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.logging import logger
 from app.models.request import AnalyzeRequest
 from app.services.audit import AuditService
+from app.webhooks.router import router as webhooks_router
 
 app = FastAPI(title="DevLens Analysis API")
+
+# Include Webhooks Router
+app.include_router(webhooks_router)
 
 # Initialize Audit Service
 audit_service = AuditService()
