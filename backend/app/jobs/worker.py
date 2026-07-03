@@ -9,8 +9,9 @@ from app.core.logging import logger
 
 class Worker:
     def __init__(self, queue: BaseQueue, pipeline: Optional[AuditPipeline] = None, job_timeout_sec: float = 30.0):
+        from app.ai.provider import GroqProvider
         self.queue = queue
-        self.pipeline = pipeline or AuditPipeline()
+        self.pipeline = pipeline or AuditPipeline(ai_provider=GroqProvider())
         self.running = False
         self.jobs_processed = 0
         self.job_timeout_sec = job_timeout_sec
@@ -66,10 +67,12 @@ class Worker:
                 repo_input = snapshot
 
             # Enforce execution timeout constraint
+            start_time = time.time()
             report = await asyncio.wait_for(
                 self.pipeline.execute_audit(repo_input),
                 timeout=self.job_timeout_sec
             )
+            duration_ms = int((time.time() - start_time) * 1000)
             
             if not report.execution.narrative_completed:
                 if job.retries < job.max_retries:
@@ -88,6 +91,61 @@ class Worker:
                     return
 
             score = report.scorecard.overall_score
+            
+            # Save completed audit details to PostgreSQL & Redis Cache
+            from app.api.analytics import shared_analytics
+            from app.models.analytics import AuditHistoryRecord, EvidenceSummary
+            from datetime import datetime
+
+            passed_rules = [r.rule_id for r in report.scorecard.rule_results if r.passed]
+            failed_rules = [r.rule_id for r in report.scorecard.rule_results if not r.passed]
+            
+            security_findings = len([r for r in failed_rules if r.startswith("SEC")])
+            documentation_findings = len([r for r in failed_rules if r.startswith("DOC")])
+            testing_findings = len([r for r in failed_rules if r.startswith("TEST")])
+
+            frameworks = getattr(report.analysis, "frameworks", [])
+            languages = getattr(report.analysis, "languages", [])
+            licenses = getattr(report.analysis, "licenses", [])
+            ci = getattr(report.analysis, "ci", [])
+            testing = getattr(report.analysis, "testing", [])
+            deployment = getattr(report.analysis, "deployment", [])
+            architecture = getattr(report.analysis, "architecture", "Standard")
+
+            evidence = EvidenceSummary(
+                passed_rules=passed_rules,
+                failed_rules=failed_rules,
+                frameworks=frameworks,
+                languages=languages,
+                licenses=licenses,
+                ci=ci,
+                testing=testing,
+                deployment=deployment,
+                architecture=architecture,
+                security_findings=security_findings,
+                documentation_findings=documentation_findings,
+                testing_findings=testing_findings
+            )
+
+            record = AuditHistoryRecord(
+                audit_id=job.job_id,
+                repository_id=f"{installation_id or 12345}/{repo_name or 'test-repo'}",
+                repo_name=repo_name or "test-repo",
+                installation_id=installation_id or 12345,
+                score=score,
+                status="success",
+                scoring_version=report.scorecard.scoring_version,
+                devlens_version="3.0",
+                commit_sha=head_sha or "unknown",
+                branch=job.repo_data.get("branch") or "main",
+                audit_duration_ms=duration_ms,
+                trigger_type=job.repo_data.get("trigger_type") or "push",
+                warnings_count=len(report.scorecard.rule_results) - len(passed_rules),
+                timestamp=datetime.utcnow(),
+                evidence=evidence
+            )
+            
+            await shared_analytics.process_audit_completion(record)
             
             # Publish Integration statuses
             if client:

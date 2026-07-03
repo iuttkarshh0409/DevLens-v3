@@ -11,8 +11,8 @@ from app.services.analytics_service import (
     ExportService
 )
 
-class TestAnalyticsHistorical(unittest.TestCase):
-    def setUp(self):
+class TestAnalyticsHistorical(unittest.IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
         self.store = InMemoryAnalyticsStore()
         self.service = AnalyticsService(self.store, retention_days=30, retention_count=5)
         
@@ -43,31 +43,31 @@ class TestAnalyticsHistorical(unittest.TestCase):
             )
         )
 
-    def test_processing_and_retention_expiry(self):
+    async def test_processing_and_retention_expiry(self):
         now = datetime.utcnow()
         
         # 1. Old records (beyond 30 days retention cutoff)
         old_record = self._create_record("repo_a", 8.0, now - timedelta(days=32))
-        self.service.process_audit_completion(old_record)
+        await self.service.process_audit_completion(old_record)
         
         # Verify it got deleted immediately by time-based retention policy
-        records = self.store.get_audit_records(repository_id="repo_a")
+        records = await self.store.get_audit_records(repository_id="repo_a")
         self.assertEqual(len(records), 0)
 
         # 2. Add multiple records within retention limits to trigger count retention (limit = 5)
         for i in range(7):
             rec = self._create_record("repo_b", 7.0 + (i * 0.1), now - timedelta(minutes=10 - i))
-            self.service.process_audit_completion(rec)
+            await self.service.process_audit_completion(rec)
 
         # Verify only the latest 5 records remain
-        records_b = self.store.get_audit_records(repository_id="repo_b")
+        records_b = await self.store.get_audit_records(repository_id="repo_b")
         self.assertEqual(len(records_b), 5)
         
         # Ensure they are sorted chronologically and are the latest ones
         self.assertAlmostEqual(records_b[0].score, 7.2)
         self.assertAlmostEqual(records_b[-1].score, 7.6)
 
-    def test_out_of_order_webhook_delivery_idempotency(self):
+    async def test_out_of_order_webhook_delivery_idempotency(self):
         now = datetime.utcnow()
         
         # Simulate webhook payloads arriving backwards
@@ -75,31 +75,34 @@ class TestAnalyticsHistorical(unittest.TestCase):
         rec_old = self._create_record("repo_c", 6.5, now - timedelta(hours=2))
         
         # 1. Process new first
-        self.service.process_audit_completion(rec_new)
+        await self.service.process_audit_completion(rec_new)
         # 2. Process old second (out-of-order payload)
-        self.service.process_audit_completion(rec_old)
+        await self.service.process_audit_completion(rec_old)
         
         # Verify the summary health is built off the latest timestamp (rec_new) despite out-of-order arrives
-        health = self.store.health_records["repo_c"]
+        healths = await self.store.get_health_records(12345)
+        health = [h for h in healths if h.repository_id == "repo_c"][0]
         self.assertEqual(health.health_score, 9.0)
         self.assertEqual(health.last_audit, rec_new.timestamp)
 
-    def test_nightly_full_rebuild_idempotence(self):
+    async def test_nightly_full_rebuild_idempotence(self):
         now = datetime.utcnow()
         rec1 = self._create_record("repo_d", 8.0, now - timedelta(hours=1))
         rec2 = self._create_record("repo_d", 8.5, now)
         
-        self.service.process_audit_completion(rec1)
-        self.service.process_audit_completion(rec2)
+        await self.service.process_audit_completion(rec1)
+        await self.service.process_audit_completion(rec2)
         
         # Check current score
-        health_before = self.store.health_records["repo_d"]
+        healths = await self.store.get_health_records(12345)
+        health_before = [h for h in healths if h.repository_id == "repo_d"][0]
         self.assertEqual(health_before.health_score, 8.5)
         
         # Trigger full rebuild (should remain identical)
-        self.service.execute_nightly_rebuild(12345)
+        await self.service.execute_nightly_rebuild(12345)
         
-        health_after = self.store.health_records["repo_d"]
+        healths_after = await self.store.get_health_records(12345)
+        health_after = [h for h in healths_after if h.repository_id == "repo_d"][0]
         self.assertEqual(health_after.health_score, 8.5)
 
     def test_trend_engine_calculations(self):

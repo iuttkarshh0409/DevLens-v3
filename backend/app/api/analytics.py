@@ -1,29 +1,51 @@
 import json
-from typing import Optional
+import redis
+from typing import Optional, Dict, Any, List
 from fastapi import APIRouter, Query, HTTPException, Depends
 from fastapi.responses import StreamingResponse, JSONResponse
 from datetime import datetime, timedelta
 
 # Local imports
 from app.models.analytics import RepositoryHealthView
+from app.core.config import DEVLENS_ENV, DATABASE_URL, REDIS_URL, ANALYTICS_CACHE_TTL
 from app.services.analytics_service import (
     AnalyticsService,
     InMemoryAnalyticsStore,
     TrendEngine,
     ExportService
 )
+from app.storage.sql_analytics_store import SQLAnalyticsStore
+from app.database.connection import async_session
 
 router = APIRouter(prefix="/api/v1/analytics", tags=["analytics"])
 
-# Shared in-memory store instance
-shared_store = InMemoryAnalyticsStore()
+# Environment-based store selection
+if DEVLENS_ENV.lower() == "production":
+    shared_store = SQLAnalyticsStore(async_session)
+else:
+    shared_store = InMemoryAnalyticsStore()
+
 shared_analytics = AnalyticsService(shared_store)
 
-# Redis mock cache simulation
-_redis_mock_cache = {}
+# Resilient Redis Cache Connection
+redis_client = None
+try:
+    redis_client = redis.Redis.from_url(REDIS_URL, decode_responses=True, socket_timeout=2.0)
+except Exception:
+    pass
+
+def invalidate_dashboard_cache(installation_id: int) -> None:
+    """Invalidates the versioned Redis cache key for the organization."""
+    if redis_client:
+        try:
+            redis_client.delete(f"analytics:v1:{installation_id}")
+        except Exception:
+            pass
+
+# Attach cache invalidation callback to self-heal dashboard states
+shared_analytics.on_completion_callback = invalidate_dashboard_cache
 
 def get_installation_id() -> int:
-    # Simulates OAuth/JWT token parsing middleware resolving installation context
     return 12345
 
 @router.get("/overview")
@@ -33,13 +55,23 @@ async def get_overview(
 ):
     cache_key = f"analytics:v1:{installation_id}"
     
-    if not refresh_cache and cache_key in _redis_mock_cache:
-        # Cache Hit
-        return json.loads(_redis_mock_cache[cache_key])
+    if not refresh_cache and redis_client:
+        try:
+            cached = redis_client.get(cache_key)
+            if cached:
+                return json.loads(cached)
+        except Exception:
+            pass
 
     # Cache Miss / Warmup
-    widgets = shared_analytics.get_dashboard_widgets(installation_id)
-    _redis_mock_cache[cache_key] = json.dumps(widgets)
+    widgets = await shared_analytics.get_dashboard_widgets(installation_id)
+    
+    if redis_client:
+        try:
+            redis_client.setex(cache_key, ANALYTICS_CACHE_TTL, json.dumps(widgets))
+        except Exception:
+            pass
+            
     return widgets
 
 @router.get("/trends")
@@ -48,7 +80,7 @@ async def get_trends(
     aggregation: str = Query("average", regex="^(average|sum|max|median|percentile|rolling_average)$"),
     installation_id: int = Depends(get_installation_id)
 ):
-    records = shared_store.get_audit_records(installation_id=installation_id)
+    records = await shared_store.get_audit_records(installation_id=installation_id)
     time_series = TrendEngine.calculate_trends(records, interval, aggregation)
     return time_series
 
@@ -58,9 +90,9 @@ async def get_repositories(
     limit: int = Query(10, ge=1, le=100),
     installation_id: int = Depends(get_installation_id)
 ):
-    healths = shared_store.get_health_records(installation_id)
+    healths = await shared_store.get_health_records(installation_id)
     
-    # Simple cursor/offset pagination
+    # Cursor/Offset pagination
     start = (page - 1) * limit
     end = start + limit
     paginated = healths[start:end]
@@ -92,9 +124,8 @@ async def export_data(
     installation_id: int = Depends(get_installation_id),
     range_str: str = Query("90d")
 ):
-    records = shared_store.get_audit_records(installation_id=installation_id)
+    records = await shared_store.get_audit_records(installation_id=installation_id)
     
-    # Filter by range range_str
     days = 90
     if range_str.endswith("d"):
         try:
@@ -109,7 +140,6 @@ async def export_data(
         json_output = ExportService.generate_json_export(filtered, installation_id, range_str)
         return JSONResponse(content=json_output)
     
-    # CSV format streaming response
     csv_string = ExportService.generate_csv_export(filtered)
     
     return StreamingResponse(

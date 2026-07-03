@@ -148,6 +148,18 @@ def with_redis_retry(max_retries: int = 3, base_delay: float = 0.5):
 class RedisQueue(BaseQueue):
     def __init__(self, host: str = "localhost", port: int = 6379, db: int = 0):
         import os
+        from urllib.parse import urlparse
+        
+        redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+        try:
+            parsed = urlparse(redis_url)
+            host = parsed.hostname or host
+            port = parsed.port or port
+            db_path = parsed.path.strip("/")
+            db = int(db_path) if db_path.isdigit() else db
+        except Exception:
+            pass
+
         self.host = host
         self.port = port
         self.db = db

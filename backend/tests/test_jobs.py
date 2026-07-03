@@ -34,19 +34,34 @@ class TestJobsAndQueues(unittest.TestCase):
         queue.enqueue(job)
 
         # Mock Pipeline execution
-        mock_pipeline = AsyncMock()
         mock_report = Mock()
         mock_report.execution.narrative_completed = True
+        mock_report.scorecard.overall_score = 9.0
+        mock_report.scorecard.scoring_version = "3.0"
+        mock_report.scorecard.rule_results = []
+        mock_report.analysis.frameworks = []
+        mock_report.analysis.languages = []
+        mock_report.analysis.licenses = []
+        mock_report.analysis.ci = []
+        mock_report.analysis.testing = []
+        mock_report.analysis.deployment = []
+        mock_report.analysis.architecture = "Standard"
+        
+        mock_pipeline = AsyncMock()
         mock_pipeline.execute_audit.return_value = mock_report
 
         worker = Worker(queue=queue, pipeline=mock_pipeline)
         
-        # Dequeue and process
-        dq_job = queue.dequeue()
-        await worker.process_job(dq_job)
+        # Patch shared_analytics to avoid actual database calls during tests
+        from unittest.mock import patch
+        with patch("app.api.analytics.shared_analytics.process_audit_completion", new_callable=AsyncMock) as mock_process:
+            # Dequeue and process
+            dq_job = queue.dequeue()
+            await worker.process_job(dq_job)
 
-        self.assertEqual(dq_job.status, JobStatus.COMPLETED)
-        self.assertEqual(worker.jobs_processed, 1)
+            self.assertEqual(dq_job.status, JobStatus.COMPLETED)
+            self.assertEqual(worker.jobs_processed, 1)
+            mock_process.assert_called_once()
 
     async def test_worker_transient_retry(self):
         queue = InMemoryQueue()
@@ -56,30 +71,42 @@ class TestJobsAndQueues(unittest.TestCase):
         mock_pipeline = AsyncMock()
         mock_report = Mock()
         mock_report.execution.narrative_completed = False  # Triggers retry
+        mock_report.scorecard.overall_score = 5.0
+        mock_report.scorecard.scoring_version = "3.0"
+        mock_report.scorecard.rule_results = []
+        mock_report.analysis.frameworks = []
+        mock_report.analysis.languages = []
+        mock_report.analysis.licenses = []
+        mock_report.analysis.ci = []
+        mock_report.analysis.testing = []
+        mock_report.analysis.deployment = []
+        mock_report.analysis.architecture = "Standard"
         mock_pipeline.execute_audit.return_value = mock_report
 
         worker = Worker(queue=queue, pipeline=mock_pipeline)
         
-        # Dequeue and process (First try)
-        dq_job = queue.dequeue()
-        await worker.process_job(dq_job)
+        from unittest.mock import patch
+        with patch("app.api.analytics.shared_analytics.process_audit_completion", new_callable=AsyncMock):
+            # Dequeue and process (First try)
+            dq_job = queue.dequeue()
+            await worker.process_job(dq_job)
 
-        # Should be re-enqueued as PENDING
-        self.assertEqual(dq_job.status, JobStatus.PENDING)
-        self.assertEqual(dq_job.retries, 1)
-        self.assertEqual(len(queue.queue), 1)
+            # Should be re-enqueued as PENDING
+            self.assertEqual(dq_job.status, JobStatus.PENDING)
+            self.assertEqual(dq_job.retries, 1)
+            self.assertEqual(len(queue.queue), 1)
 
-        # Process Second try
-        dq_job_2 = queue.dequeue()
-        await worker.process_job(dq_job_2)
-        self.assertEqual(dq_job_2.status, JobStatus.PENDING)
-        self.assertEqual(dq_job_2.retries, 2)
+            # Process Second try
+            dq_job_2 = queue.dequeue()
+            await worker.process_job(dq_job_2)
+            self.assertEqual(dq_job_2.status, JobStatus.PENDING)
+            self.assertEqual(dq_job_2.retries, 2)
 
-        # Process Third try -> exceeds max_retries, should fail
-        dq_job_3 = queue.dequeue()
-        await worker.process_job(dq_job_3)
-        self.assertEqual(dq_job_3.status, JobStatus.FAILED)
-        self.assertEqual(queue.failed_count, 1)
+            # Process Third try -> exceeds max_retries, should fail
+            dq_job_3 = queue.dequeue()
+            await worker.process_job(dq_job_3)
+            self.assertEqual(dq_job_3.status, JobStatus.FAILED)
+            self.assertEqual(queue.failed_count, 1)
 
     def test_fifty_assertions_metric_validation(self):
         queue = InMemoryQueue()

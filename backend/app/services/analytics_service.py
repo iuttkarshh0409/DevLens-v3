@@ -14,27 +14,27 @@ from app.models.analytics import (
 
 class BaseAnalyticsStore(ABC):
     @abstractmethod
-    def save_audit_record(self, record: AuditHistoryRecord) -> None:
+    async def save_audit_record(self, record: AuditHistoryRecord) -> None:
         pass
 
     @abstractmethod
-    def get_audit_records(self, repository_id: Optional[str] = None, installation_id: Optional[int] = None) -> List[AuditHistoryRecord]:
+    async def get_audit_records(self, repository_id: Optional[str] = None, installation_id: Optional[int] = None) -> List[AuditHistoryRecord]:
         pass
 
     @abstractmethod
-    def delete_records_older_than(self, timestamp: datetime) -> int:
+    async def delete_records_older_than(self, timestamp: datetime) -> int:
         pass
 
     @abstractmethod
-    def delete_excess_records(self, repository_id: str, limit: int) -> int:
+    async def delete_excess_records(self, repository_id: str, limit: int) -> int:
         pass
 
     @abstractmethod
-    def save_health_record(self, record: RepositoryHealthRecord) -> None:
+    async def save_health_record(self, record: RepositoryHealthRecord) -> None:
         pass
 
     @abstractmethod
-    def get_health_records(self, installation_id: int) -> List[RepositoryHealthRecord]:
+    async def get_health_records(self, installation_id: int) -> List[RepositoryHealthRecord]:
         pass
 
 
@@ -43,14 +43,14 @@ class InMemoryAnalyticsStore(BaseAnalyticsStore):
         self.audit_records: List[AuditHistoryRecord] = []
         self.health_records: Dict[str, RepositoryHealthRecord] = {}
 
-    def save_audit_record(self, record: AuditHistoryRecord) -> None:
+    async def save_audit_record(self, record: AuditHistoryRecord) -> None:
         # Prevent double inserts
         self.audit_records = [r for r in self.audit_records if r.audit_id != record.audit_id]
         self.audit_records.append(record)
         # Sort chronologically
         self.audit_records.sort(key=lambda r: r.timestamp)
 
-    def get_audit_records(self, repository_id: Optional[str] = None, installation_id: Optional[int] = None) -> List[AuditHistoryRecord]:
+    async def get_audit_records(self, repository_id: Optional[str] = None, installation_id: Optional[int] = None) -> List[AuditHistoryRecord]:
         records = self.audit_records
         if repository_id:
             records = [r for r in records if r.repository_id == repository_id]
@@ -58,12 +58,12 @@ class InMemoryAnalyticsStore(BaseAnalyticsStore):
             records = [r for r in records if r.installation_id == installation_id]
         return records
 
-    def delete_records_older_than(self, timestamp: datetime) -> int:
+    async def delete_records_older_than(self, timestamp: datetime) -> int:
         before_count = len(self.audit_records)
         self.audit_records = [r for r in self.audit_records if r.timestamp >= timestamp]
         return before_count - len(self.audit_records)
 
-    def delete_excess_records(self, repository_id: str, limit: int) -> int:
+    async def delete_excess_records(self, repository_id: str, limit: int) -> int:
         repo_records = [r for r in self.audit_records if r.repository_id == repository_id]
         if len(repo_records) <= limit:
             return 0
@@ -79,10 +79,10 @@ class InMemoryAnalyticsStore(BaseAnalyticsStore):
         ]
         return before_count - len(self.audit_records)
 
-    def save_health_record(self, record: RepositoryHealthRecord) -> None:
+    async def save_health_record(self, record: RepositoryHealthRecord) -> None:
         self.health_records[record.repository_id] = record
 
-    def get_health_records(self, installation_id: int) -> List[RepositoryHealthRecord]:
+    async def get_health_records(self, installation_id: int) -> List[RepositoryHealthRecord]:
         # Filter installation matching (mocking using prefix check or simple mapping)
         return list(self.health_records.values())
 
@@ -232,23 +232,27 @@ class AnalyticsService:
         self.retention_days = retention_days
         self.retention_count = retention_count
 
-    def process_audit_completion(self, record: AuditHistoryRecord) -> None:
+    async def process_audit_completion(self, record: AuditHistoryRecord) -> None:
         """Processes audit records and runs automatic retention expiries."""
-        self.store.save_audit_record(record)
+        await self.store.save_audit_record(record)
         
         # Enforce configurable retention policy
         if self.retention_days > 0:
             cutoff = datetime.utcnow() - timedelta(days=self.retention_days)
-            self.store.delete_records_older_than(cutoff)
+            await self.store.delete_records_older_than(cutoff)
         
         if self.retention_count and self.retention_count > 0:
-            self.store.delete_excess_records(record.repository_id, self.retention_count)
+            await self.store.delete_excess_records(record.repository_id, self.retention_count)
             
         # Re-calculate repository health summary
-        self.update_repository_health(record.repository_id, record.installation_id)
+        await self.update_repository_health(record.repository_id, record.installation_id)
 
-    def update_repository_health(self, repository_id: str, installation_id: int) -> None:
-        records = self.store.get_audit_records(repository_id=repository_id)
+        # Invalidate cache if invalidation callback is defined
+        if hasattr(self, "on_completion_callback") and self.on_completion_callback:
+            self.on_completion_callback(record.installation_id)
+
+    async def update_repository_health(self, repository_id: str, installation_id: int) -> None:
+        records = await self.store.get_audit_records(repository_id=repository_id)
         if not records:
             return
             
@@ -285,18 +289,18 @@ class AnalyticsService:
             security_score=latest.evidence.security_findings,
             testing_score=latest.evidence.testing_findings
         )
-        self.store.save_health_record(health)
+        await self.store.save_health_record(health)
 
-    def execute_nightly_rebuild(self, installation_id: int) -> None:
+    async def execute_nightly_rebuild(self, installation_id: int) -> None:
         """Idempotent nightly full rebuild that reconciles repository summaries and structures."""
-        records = self.store.get_audit_records(installation_id=installation_id)
+        records = await self.store.get_audit_records(installation_id=installation_id)
         repo_ids = {r.repository_id for r in records}
         for repo_id in repo_ids:
-            self.update_repository_health(repo_id, installation_id)
+            await self.update_repository_health(repo_id, installation_id)
 
-    def get_dashboard_widgets(self, installation_id: int) -> Dict[str, Any]:
+    async def get_dashboard_widgets(self, installation_id: int) -> Dict[str, Any]:
         """Assembles dashboard widget DTO structures."""
-        healths = self.store.get_health_records(installation_id)
+        healths = await self.store.get_health_records(installation_id)
         
         # Widget 1: Score Distribution counts
         dist = {"high_quality": 0, "medium_quality": 0, "low_quality": 0}
