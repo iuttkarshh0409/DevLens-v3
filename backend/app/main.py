@@ -9,12 +9,14 @@ from app.models.request import AnalyzeRequest
 from app.services.audit import AuditService
 from app.webhooks.router import router as webhooks_router
 from app.api.badges import router as badges_router
+from app.api.analytics import router as analytics_router
 
 app = FastAPI(title="DevLens Analysis API")
 
 # Include Routers
 app.include_router(webhooks_router)
 app.include_router(badges_router)
+app.include_router(analytics_router)
 
 # Initialize Audit Service
 audit_service = AuditService()

@@ -9,6 +9,14 @@ GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 GITHUB_APP_ID = os.getenv("GITHUB_APP_ID")
 GITHUB_APP_PRIVATE_KEY = os.getenv("GITHUB_APP_PRIVATE_KEY")
 GITHUB_WEBHOOK_SECRET = os.getenv("GITHUB_WEBHOOK_SECRET")
+DEVLENS_ENV = os.getenv("DEVLENS_ENV", "development")
+
+# Production validations at startup
+if DEVLENS_ENV.lower() == "production":
+    if not GITHUB_WEBHOOK_SECRET:
+        raise ValueError("CRITICAL CONFIGURATION ERROR: GITHUB_WEBHOOK_SECRET must be set in production mode.")
+    if not GITHUB_APP_ID or not GITHUB_APP_PRIVATE_KEY:
+        raise ValueError("CRITICAL CONFIGURATION ERROR: GITHUB_APP_ID and GITHUB_APP_PRIVATE_KEY must be set in production mode.")
 
 _client_groq = None
 
@@ -17,4 +25,5 @@ def get_groq_client() -> AsyncGroq:
     if _client_groq is None:
         _client_groq = AsyncGroq(api_key=GROQ_API_KEY)
     return _client_groq
+
 

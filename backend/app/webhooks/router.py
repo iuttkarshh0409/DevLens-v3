@@ -3,7 +3,7 @@ import hashlib
 import json
 from typing import Optional
 from fastapi import APIRouter, Request, HTTPException, Header
-from app.core.config import GITHUB_WEBHOOK_SECRET
+from app.core.config import GITHUB_WEBHOOK_SECRET, DEVLENS_ENV
 from app.core.logging import logger
 from app.models.webhook import PushEvent, PullRequestEvent, InstallationEvent, RepositoryEvent, CheckSuiteEvent
 from app.rie.pipeline import AuditPipeline
@@ -13,6 +13,8 @@ router = APIRouter(prefix="/github", tags=["webhooks"])
 def verify_signature(payload_body: bytes, signature_header: Optional[str]) -> None:
     """Verifies that the webhook payload is signed with our secret key."""
     if not GITHUB_WEBHOOK_SECRET:
+        if DEVLENS_ENV.lower() == "production":
+            raise HTTPException(status_code=401, detail="Webhook secret is missing from production configuration.")
         # If secret is not set in config, skip validation (mostly local testing/development)
         return
 

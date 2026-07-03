@@ -63,6 +63,13 @@ class ChecksService:
                     "title": ann.message,
                     "message": ann.suggestion
                 })
+                
+        # Sort deterministically to ensure stable Check Run outputs
+        github_annotations.sort(key=lambda x: (x["path"], x["start_line"], x["title"]))
+
+        # Partition annotations into batches of 50
+        batches = [github_annotations[i:i + 50] for i in range(0, len(github_annotations), 50)]
+        first_annotations = batches[0] if batches else []
 
         text_body = ""
         if repo_warnings:
@@ -73,7 +80,7 @@ class ChecksService:
             status_icon = "✔" if result.passed else "✘"
             text_body += f"- {status_icon} **{name}**: {'Passed' if result.passed else 'Failed'}\n"
 
-        # Output limit is 50 annotations per payload check run. Chunk if necessary.
+        # Publish the first batch in the complete check run payload
         payload = {
             "status": "completed",
             "completed_at": self._now_iso(),
@@ -82,10 +89,27 @@ class ChecksService:
                 "title": f"DevLens Audit Score: {score:.1f}/10.0",
                 "summary": summary,
                 "text": text_body,
-                "annotations": github_annotations[:50]
+                "annotations": first_annotations
             }
         }
-        return await self.client.update_check_run(owner, repo, check_run_id, payload)
+        res = await self.client.update_check_run(owner, repo, check_run_id, payload)
+
+        # Patch remaining batches sequentially
+        if len(batches) > 1:
+            for idx, batch in enumerate(batches[1:]):
+                try:
+                    patch_payload = {
+                        "output": {
+                            "title": f"DevLens Audit Score: {score:.1f}/10.0",
+                            "summary": f"Additional audit annotations (Batch {idx + 2} of {len(batches)})",
+                            "annotations": batch
+                        }
+                    }
+                    await self.client.update_check_run(owner, repo, check_run_id, patch_payload)
+                except Exception as e:
+                    logger.error(f"Partial upload failure for annotation batch {idx + 2}: {str(e)}")
+
+        return res
 
     def _now_iso(self) -> str:
         from datetime import datetime

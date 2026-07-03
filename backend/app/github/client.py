@@ -3,12 +3,20 @@ import base64
 import asyncio
 import httpx
 import jwt
+import datetime
+import calendar
+import threading
 from typing import Dict, Any, Optional
 from app.core.config import GITHUB_TOKEN, GITHUB_APP_ID, GITHUB_APP_PRIVATE_KEY
 from app.core.logging import logger
 from app.core.exceptions import GitHubApiException
 from app.core.context import RequestContext
 from app.models.github import RepositorySnapshot
+
+# Thread-safe and asyncio-safe Installation Access Token Cache
+_token_cache = {}  # {installation_id: {"token": token, "expires_at": expires_epoch}}
+_cache_lock = asyncio.Lock()
+_thread_lock = threading.Lock()
 
 def generate_app_jwt() -> str:
     """Generates a signed JWT for authenticating as the GitHub App."""
@@ -26,20 +34,58 @@ def generate_app_jwt() -> str:
     return jwt.encode(payload, key_pem, algorithm="RS256")
 
 async def get_installation_access_token(installation_id: int) -> str:
-    """Exchanges a signed App JWT for an Installation Access Token."""
-    app_jwt = generate_app_jwt()
-    headers = {
-        "Authorization": f"Bearer {app_jwt}",
-        "Accept": "application/vnd.github.v3+json"
-    }
-    url = f"https://api.github.com/app/installations/{installation_id}/access_tokens"
+    """Exchanges a signed App JWT for an Installation Access Token, utilizing an in-memory cache."""
+    now_epoch = int(time.time())
     
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        response = await client.post(url, headers=headers)
-        if response.status_code != 201:
-            logger.error(f"Failed to generate installation token: {response.text}")
-            raise GitHubApiException(status_code=response.status_code, message="Invalid installation access token request.")
-        return response.json().get("token")
+    # 1. Thread-safe read fast path
+    with _thread_lock:
+        cached = _token_cache.get(installation_id)
+        if cached:
+            # Reuse cached token if remaining lifetime is >= 60 seconds
+            if cached["expires_at"] - now_epoch >= 60:
+                return cached["token"]
+
+    # 2. Asyncio-safe lock check path
+    async with _cache_lock:
+        with _thread_lock:
+            cached = _token_cache.get(installation_id)
+            if cached and cached["expires_at"] - int(time.time()) >= 60:
+                return cached["token"]
+
+        # Fetch new token
+        app_jwt = generate_app_jwt()
+        headers = {
+            "Authorization": f"Bearer {app_jwt}",
+            "Accept": "application/vnd.github.v3+json"
+        }
+        url = f"https://api.github.com/app/installations/{installation_id}/access_tokens"
+        
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.post(url, headers=headers)
+            if response.status_code != 201:
+                logger.error(f"Failed to generate installation token: {response.text}")
+                raise GitHubApiException(status_code=response.status_code, message="Invalid installation access token request.")
+            
+            res_data = response.json()
+            token = res_data.get("token")
+            expires_at_str = res_data.get("expires_at")
+            expires_epoch = now_epoch + 3600  # 1 hour fallback
+            
+            if expires_at_str:
+                try:
+                    # Parse expires_at ISO string (e.g. 2026-07-03T21:09:41Z)
+                    expires_dt = datetime.datetime.strptime(expires_at_str.replace("Z", ""), "%Y-%m-%dT%H:%M:%S")
+                    expires_epoch = calendar.timegm(expires_dt.utctimetuple())
+                except Exception:
+                    pass
+
+            with _thread_lock:
+                _token_cache[installation_id] = {
+                    "token": token,
+                    "expires_at": expires_epoch
+                }
+            return token
+
 
 class GitHubClient:
     def __init__(self, installation_id: Optional[int] = None, oauth_token: Optional[str] = None, context: Optional[RequestContext] = None):

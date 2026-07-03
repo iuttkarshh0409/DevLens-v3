@@ -31,7 +31,7 @@ class RepositoryInsightsService:
                 has_package_json = True
             if "requirements.txt" in f:
                 has_requirements_txt = True
-            if "poetry.lock" in f:
+            if "poetry.lock" in f or ("pyproject.toml" in f and "poetry" in readme):
                 has_poetry_lock = True
             
             # Package Manager mapping
@@ -43,8 +43,28 @@ class RepositoryInsightsService:
                 package_managers.append("pnpm")
             if "requirements.txt" in f and "pip" not in package_managers:
                 package_managers.append("pip")
-            if "poetry.lock" in f and "poetry" not in package_managers:
+            if ("poetry.lock" in f or "pyproject.toml" in f) and "poetry" not in package_managers:
                 package_managers.append("poetry")
+            if ("pipfile" in f or "pipfile.lock" in f) and "pipenv" not in package_managers:
+                package_managers.append("pipenv")
+            if "hatch.toml" in f and "hatch" not in package_managers:
+                package_managers.append("hatch")
+            if "uv.lock" in f and "uv" not in package_managers:
+                package_managers.append("uv")
+            if "pom.xml" in f and "maven" not in package_managers:
+                package_managers.append("maven")
+            if ("build.gradle" in f or "build.gradle.kts" in f) and "gradle" not in package_managers:
+                package_managers.append("gradle")
+            if ("cargo.toml" in f or "cargo.lock" in f) and "cargo" not in package_managers:
+                package_managers.append("cargo")
+            if ("go.mod" in f or "go.sum" in f) and "go" not in package_managers:
+                package_managers.append("go")
+            if ("composer.json" in f or "composer.lock" in f) and "composer" not in package_managers:
+                package_managers.append("composer")
+            if (f.endswith(".csproj") or "packages.config" in f) and "nuget" not in package_managers:
+                package_managers.append("nuget")
+            if "bun.lockb" in f and "bun" not in package_managers:
+                package_managers.append("bun")
 
         # 2. Frontend / Backend Stack Detection
         # Check files content / naming conventions
@@ -72,9 +92,13 @@ class RepositoryInsightsService:
             if "flask" in readme or any("app.py" in f or "flask" in f for f in files_set):
                 backend.append("Flask")
 
-        # Spring Boot
-        if any("pom.xml" in f or "build.gradle" in f for f in files_set):
+        # Java & Rust & Go Backend Detection
+        if "maven" in package_managers or "gradle" in package_managers:
             backend.append("Spring Boot")
+        if "cargo" in package_managers:
+            backend.append("Rust Cargo")
+        if "go" in package_managers:
+            backend.append("Go Modules")
 
         # 3. CI Pipelines
         if any(".github/workflows" in f for f in files_set):
@@ -92,12 +116,12 @@ class RepositoryInsightsService:
         if "vitest" in readme or any("vitest.config" in f for f in files_set):
             testing.append("Vitest")
 
-        # 5. Containerization
+        # 5. Containerization & Dev Environments
         if any("dockerfile" in f for f in files_set):
             containerization.append("Docker")
-        if any("docker-compose" in f for f in files_set):
+        if any("docker-compose" in f or "compose.yaml" in f or "compose.yml" in f for f in files_set):
             containerization.append("Docker Compose")
-        if any(".devcontainer" in f for f in files_set):
+        if any("devcontainer.json" in f or ".devcontainer" in f for f in files_set):
             containerization.append("devcontainer")
 
         # 6. License
@@ -106,9 +130,9 @@ class RepositoryInsightsService:
             license_info = license_files[0]
 
         # 7. Architecture (Monorepo detection)
-        # If we have multiple package.json or config setups in subdirectories
+        # If we have multiple package.json or workspace/orchestration config files
         pkg_json_count = sum(1 for f in files_set if "package.json" in f)
-        if pkg_json_count > 1:
+        if pkg_json_count > 1 or any(x in files_set for x in ["turbo.json", "nx.json", "lerna.json", "pnpm-workspace.yaml"]):
             architecture = "Monorepo"
         elif sum(1 for f in files_set if "setup.py" in f or "pyproject.toml" in f) > 1:
             architecture = "Monorepo"
