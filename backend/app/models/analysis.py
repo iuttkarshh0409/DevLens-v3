@@ -44,3 +44,4 @@ class RepositoryAnalysis(BaseModel):
     scoring_schema_version: str = "3.0.0"
     evidence_graph: EvidenceGraph
     results: Dict[str, AnalyzerResult]
+    warnings: List[str] = Field(default_factory=list)

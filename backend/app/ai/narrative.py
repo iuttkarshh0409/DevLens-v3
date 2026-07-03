@@ -4,6 +4,7 @@ from app.models.analysis import RepositoryAnalysis
 from app.scoring.models import ScoreReport
 from app.models.audit import NarrativeSection, Recommendation, PriorityItem
 from app.ai.provider import BaseAIProvider
+from app.ai.prompt import PromptBuilder
 
 class AuditContext:
     def __init__(self, analysis: RepositoryAnalysis, scorecard: ScoreReport):
@@ -11,29 +12,9 @@ class AuditContext:
         self.scorecard = scorecard
 
 class NarrativeEngine:
-    SYSTEM_PROMPT = """
-    You are a BRUTALLY HONEST Technical Recruiter & Staff Architect Narrative Engine.
-    Your job is to translate structured analysis data into written explanations and recommendations.
-    
-    STRICT COMPLIANCE RULES:
-    1. Do NOT invent repository files that are not explicitly present in the files list.
-    2. Do NOT change the overall score or category scores. Simply report them and explain the details.
-    3. Output MUST fit this JSON schema:
-    {
-      "summary": "High-level summary of the codebase structure and language maturity.",
-      "recruiter_verdict": "Direct observation for recruiters on whether this candidate is job-ready.",
-      "maturity_estimate": "Junior | Intermediate | Advanced based on evidence.",
-      "recommendations": [
-        {"title": "Title", "description": "Description of setup fix", "impact": "High"|"Medium"|"Low"}
-      ],
-      "priority_checklist": [
-        {"label": "Passed/Failed item label", "passed": bool, "hiring_impact": "Recruiter-facing reason"}
-      ]
-    }
-    """
-
-    def __init__(self, provider: BaseAIProvider):
+    def __init__(self, provider: BaseAIProvider, prompt_builder: Optional[PromptBuilder] = None):
         self.provider = provider
+        self.prompt_builder = prompt_builder or PromptBuilder()
 
     def validate_narrative(self, raw_json: str, context: AuditContext) -> NarrativeSection:
         data = json.loads(raw_json)
@@ -73,7 +54,8 @@ class NarrativeEngine:
             "has_readme": bool(context.analysis.evidence_graph.readme)
         }
         
-        user_prompt = f"Role: {role}\nContext Data: {json.dumps(input_payload)}"
+        system_prompt = self.prompt_builder.get_system_prompt()
+        user_prompt = self.prompt_builder.get_user_prompt(role, input_payload)
         
-        raw_response = await self.provider.generate(self.SYSTEM_PROMPT, user_prompt)
+        raw_response = await self.provider.generate(system_prompt, user_prompt)
         return self.validate_narrative(raw_response, context)

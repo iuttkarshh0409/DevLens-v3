@@ -1,0 +1,73 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DevLens Repository Policy",
+  "description": "Schema for .devlens.yml repository configuration policy used by DevLens V3.",
+  "type": "OBJECT",
+  "required": [
+    "apiVersion",
+    "kind",
+    "spec"
+  ],
+  "properties": {
+    "apiVersion": {
+      "type": "STRING",
+      "enum": [
+        "devlens.io/v1"
+      ]
+    },
+    "kind": {
+      "type": "STRING",
+      "enum": [
+        "RepositoryPolicy"
+      ]
+    },
+    "spec": {
+      "type": "OBJECT",
+      "properties": {
+        "analysis": {
+          "type": "OBJECT",
+          "properties": {
+            "enabledAnalyzers": {
+              "type": "ARRAY",
+              "items": {
+                "type": "STRING"
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "scoring": {
+          "type": "OBJECT",
+          "properties": {
+            "weights": {
+              "type": "OBJECT",
+              "additionalProperties": {
+                "type": "NUMBER"
+              }
+            },
+            "caps": {
+              "type": "OBJECT",
+              "additionalProperties": {
+                "type": "NUMBER"
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "ignore": {
+          "type": "OBJECT",
+          "properties": {
+            "paths": {
+              "type": "ARRAY",
+              "items": {
+                "type": "STRING"
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

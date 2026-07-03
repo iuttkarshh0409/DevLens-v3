@@ -88,7 +88,56 @@ async def receive_webhook(
             event = PullRequestEvent(**data)
             if event.repository.archived:
                 return {"status": "skipped", "reason": "Archived repo"}
-            return {"status": "success", "event": "pull_request", "number": event.number}
+            
+            if event.action in ["opened", "reopened", "synchronize"]:
+                owner = event.repository.owner.login
+                repo = event.repository.name
+                pull_number = event.number
+                head_sha = event.pull_request.head.sha
+                installation_id = event.installation.id if event.installation else None
+                
+                check_run_id = None
+                if installation_id:
+                    from app.github.client import GitHubClient
+                    from app.services.github.status_service import StatusService
+                    from app.services.github.checks_service import ChecksService
+                    
+                    client = GitHubClient(installation_id=installation_id)
+                    try:
+                        status_svc = StatusService(client)
+                        await status_svc.post_pending_status(owner, repo, head_sha)
+                    except Exception as e:
+                        logger.error(f"Failed to post pending status: {str(e)}")
+                        
+                    try:
+                        checks_svc = ChecksService(client)
+                        check_run_id = await checks_svc.create_initial_check(owner, repo, head_sha)
+                    except Exception as e:
+                        logger.error(f"Failed to create initial check run: {str(e)}")
+                
+                from app.jobs import shared_queue
+                from app.jobs.models import AuditJob
+                import uuid
+                
+                job = AuditJob(
+                    job_id=str(uuid.uuid4()),
+                    repo_data={
+                        "name": repo,
+                        "owner": owner,
+                        "installation_id": installation_id,
+                        "pull_number": pull_number,
+                        "head_sha": head_sha,
+                        "check_run_id": check_run_id
+                    }
+                )
+                shared_queue.enqueue(job)
+                return {
+                    "status": "enqueued",
+                    "event": "pull_request",
+                    "action": event.action,
+                    "job_id": job.job_id
+                }
+            return {"status": "ignored_action", "event": "pull_request", "action": event.action}
 
         elif x_github_event == "installation":
             event = InstallationEvent(**data)
@@ -100,6 +149,52 @@ async def receive_webhook(
 
         elif x_github_event == "check_suite":
             event = CheckSuiteEvent(**data)
+            if event.action in ["requested", "rerequested"]:
+                owner = event.repository.owner.login
+                repo = event.repository.name
+                head_sha = event.check_suite.head_sha
+                installation_id = event.installation.id if event.installation else None
+                
+                check_run_id = None
+                if installation_id:
+                    from app.github.client import GitHubClient
+                    from app.services.github.status_service import StatusService
+                    from app.services.github.checks_service import ChecksService
+                    
+                    client = GitHubClient(installation_id=installation_id)
+                    try:
+                        status_svc = StatusService(client)
+                        await status_svc.post_pending_status(owner, repo, head_sha)
+                    except Exception as e:
+                        logger.error(f"Failed to post pending status: {str(e)}")
+                        
+                    try:
+                        checks_svc = ChecksService(client)
+                        check_run_id = await checks_svc.create_initial_check(owner, repo, head_sha)
+                    except Exception as e:
+                        logger.error(f"Failed to create initial check run: {str(e)}")
+
+                from app.jobs import shared_queue
+                from app.jobs.models import AuditJob
+                import uuid
+                
+                job = AuditJob(
+                    job_id=str(uuid.uuid4()),
+                    repo_data={
+                        "name": repo,
+                        "owner": owner,
+                        "installation_id": installation_id,
+                        "head_sha": head_sha,
+                        "check_run_id": check_run_id
+                    }
+                )
+                shared_queue.enqueue(job)
+                return {
+                    "status": "enqueued",
+                    "event": "check_suite",
+                    "action": event.action,
+                    "job_id": job.job_id
+                }
             return {"status": "success", "event": "check_suite", "sha": event.check_suite.head_sha}
 
         else:

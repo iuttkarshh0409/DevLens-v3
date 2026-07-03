@@ -1,8 +1,11 @@
-from typing import List
+from typing import List, Any
 from app.scoring.models import RuleResult
+from app.scoring.config import ScoringConfig
 
-def evaluate_caps(rule_results: List[RuleResult], current_score: float) -> float:
-    # 7.0 Ceiling: If automated tests or CI/CD workflows are missing, cap at 7.0
+config = ScoringConfig()
+
+def evaluate_caps(rule_results: List[RuleResult], current_score: float, policy: Any = None) -> float:
+    # Dynamic Ceiling: If automated tests or CI/CD workflows are missing, apply cap
     has_tests = False
     has_cicd = False
     for res in rule_results:
@@ -12,5 +15,9 @@ def evaluate_caps(rule_results: List[RuleResult], current_score: float) -> float
             has_cicd = True
             
     if not has_tests or not has_cicd:
-        return min(current_score, 7.0)
+        cap_val = config.get_cap("MISSING_TESTS_OR_CICD")
+        if policy and "MISSING_TESTS_OR_CICD" in policy.caps:
+            cap_val = policy.caps["MISSING_TESTS_OR_CICD"]
+        return min(current_score, cap_val)
     return current_score
+

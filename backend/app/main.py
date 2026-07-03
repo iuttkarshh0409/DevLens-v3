@@ -8,11 +8,13 @@ from app.core.logging import logger
 from app.models.request import AnalyzeRequest
 from app.services.audit import AuditService
 from app.webhooks.router import router as webhooks_router
+from app.api.badges import router as badges_router
 
 app = FastAPI(title="DevLens Analysis API")
 
-# Include Webhooks Router
+# Include Routers
 app.include_router(webhooks_router)
+app.include_router(badges_router)
 
 # Initialize Audit Service
 audit_service = AuditService()
@@ -31,11 +33,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from app.core.context import RequestContext
+
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
-    logger.info(f"Incoming request: {request.method} {request.url}")
+    # Initialize RequestContext for tracking
+    ctx = RequestContext()
+    request.state.request_context = ctx
+    logger.info(f"Incoming request {ctx.request_id}: {request.method} {request.url}")
+    
     response = await call_next(request)
-    logger.info(f"Response status: {response.status_code}")
+    logger.info(f"Response status {ctx.request_id}: {response.status_code}")
     return response
 
 # Integrated Endpoints
@@ -44,9 +52,10 @@ async def health_check():
     return {"status": "healthy", "service": "DevLens Analysis Engine"}
 
 @app.post("/analyze")
-async def analyze_repository(request: AnalyzeRequest):
-    logger.info(f"Analyzing: {request.repo_url}")
-    analysis = await audit_service.run_audit_flow(request.repo_url)
+async def analyze_repository(request: Request, analyze_req: AnalyzeRequest):
+    ctx = getattr(request.state, "request_context", None) or RequestContext()
+    logger.info(f"Analyzing repo URL {analyze_req.repo_url} with request {ctx.request_id}")
+    analysis = await audit_service.run_audit_flow(analyze_req.repo_url, request_context=ctx)
     return analysis
 
 from app.jobs import shared_queue
@@ -79,7 +88,21 @@ async def app_callback(installation_id: Optional[int] = None, setup_action: Opti
         "status": "success",
         "installation_id": installation_id,
         "setup_action": setup_action,
-        "message": "GitHub App installed successfully. DevLens V3 is now active on this account."
+        "onboarding": {
+            "message": "GitHub App installed successfully. DevLens V3 is now active on your repositories.",
+            "next_steps": [
+                "1. Add a '.devlens.yml' file to the root of your repositories to customize audit rules.",
+                "2. Open a Pull Request on any configured repository to trigger DevLens Checks and Reviews.",
+                "3. Use our SVG badges in your README.md to display your repository score."
+            ],
+            "active_permissions": {
+                "checks": "write",
+                "pull_requests": "write",
+                "statuses": "write",
+                "metadata": "read"
+            },
+            "badge_url": f"http://localhost:8000/api/badge?label=devlens&value=active"
+        }
     }
 
 if __name__ == "__main__":

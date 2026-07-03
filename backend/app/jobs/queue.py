@@ -20,10 +20,14 @@ class BaseQueue(ABC):
     @abstractmethod
     def get_metrics(self) -> Dict[str, Any]: pass
 
+    @abstractmethod
+    def mark_failed_dlq(self, job: AuditJob) -> None: pass
+
 class InMemoryQueue(BaseQueue):
     def __init__(self):
         self.queue: List[AuditJob] = []
         self.jobs_store: Dict[str, AuditJob] = {}
+        self.dlq: List[AuditJob] = []
         self.failed_count = 0
         self.completed_count = 0
 
@@ -56,12 +60,17 @@ class InMemoryQueue(BaseQueue):
         return {
             "queue_depth": len(self.queue),
             "completed_jobs": self.completed_count,
-            "failed_jobs": self.failed_count
+            "failed_jobs": self.failed_count,
+            "dlq_depth": len(self.dlq)
         }
+
+    def mark_failed_dlq(self, job: AuditJob) -> None:
+        job.status = JobStatus.FAILED
+        self.dlq.append(job)
+        self.failed_count += 1
 
 class RedisQueue(BaseQueue):
     def __init__(self, host: str = "localhost", port: int = 6379, db: int = 0):
-        # Allow connecting, gracefully falling back to InMemory if Redis is offline (only in non-prod)
         import os
         is_prod = os.getenv("ENV") == "production"
         try:
@@ -77,7 +86,8 @@ class RedisQueue(BaseQueue):
     def enqueue(self, job: AuditJob) -> None:
         if not self.active:
             return self.fallback.enqueue(job)
-        self.client.set(f"job:{job.job_id}", job.json())
+        # Store with TTL of 24 hours (86400 seconds)
+        self.client.setex(f"job:{job.job_id}", 86400, job.json())
         self.client.rpush("devlens:queue", job.job_id)
 
     def dequeue(self) -> Optional[AuditJob]:
@@ -92,7 +102,7 @@ class RedisQueue(BaseQueue):
             return None
         job = AuditJob.parse_raw(job_data)
         job.status = JobStatus.RUNNING
-        self.client.set(f"job:{job.job_id}", job.json())
+        self.client.setex(f"job:{job.job_id}", 86400, job.json())
         return job
 
     def status(self, job_id: str) -> Optional[JobStatus]:
@@ -113,7 +123,7 @@ class RedisQueue(BaseQueue):
         job = AuditJob.parse_raw(job_data)
         if job.status in [JobStatus.PENDING, JobStatus.RUNNING]:
             job.status = JobStatus.CANCELLED
-            self.client.set(f"job:{job.job_id}", job.json())
+            self.client.setex(f"job:{job.job_id}", 86400, job.json())
             self.client.lrem("devlens:queue", 0, job_id)
             return True
         return False
@@ -122,8 +132,17 @@ class RedisQueue(BaseQueue):
         if not self.active:
             return self.fallback.get_metrics()
         depth = self.client.llen("devlens:queue")
+        dlq_depth = self.client.llen("devlens:dlq")
         return {
             "queue_depth": depth,
             "completed_jobs": 0,
-            "failed_jobs": 0
+            "failed_jobs": 0,
+            "dlq_depth": dlq_depth
         }
+
+    def mark_failed_dlq(self, job: AuditJob) -> None:
+        if not self.active:
+            return self.fallback.mark_failed_dlq(job)
+        job.status = JobStatus.FAILED
+        self.client.setex(f"job:{job.job_id}", 86400, job.json())
+        self.client.rpush("devlens:dlq", job.job_id)
