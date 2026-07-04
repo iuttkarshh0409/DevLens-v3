@@ -12,8 +12,7 @@ from app.jobs.models import AuditJob
 router = APIRouter(prefix="/github", tags=["webhooks"])
 
 async def run_in_memory_job(job: AuditJob):
-    """Fallback handler to process jobs in-memory when Redis queue is inactive."""
-    logger.info(f"Background task: starting in-memory execution of job {job.job_id}")
+    logger.info(f"ENTERED run_in_memory_job for job {job.job_id}")
     from app.jobs.worker import Worker
     from app.jobs import shared_queue
     worker = Worker(queue=shared_queue)
@@ -93,9 +92,8 @@ async def receive_webhook(
                 repo_data=repo_data
             )
             shared_queue.enqueue(job)
-            if not shared_queue.active:
-                logger.info(f"Redis is inactive. Running push job {job.job_id} in-memory via background task.")
-                background_tasks.add_task(run_in_memory_job, job)
+            logger.info(f"Running push job {job.job_id} synchronously.")
+            await run_in_memory_job(job)
             return {
                 "status": "enqueued",
                 "event": "push",
@@ -152,9 +150,8 @@ async def receive_webhook(
                     }
                 )
                 shared_queue.enqueue(job)
-                if not shared_queue.active:
-                    logger.info(f"Redis is inactive. Running pull_request job {job.job_id} in-memory via background task.")
-                    background_tasks.add_task(run_in_memory_job, job)
+                logger.info(f"Running pull_request job {job.job_id} synchronously.")
+                await run_in_memory_job(job)
                 return {
                     "status": "enqueued",
                     "event": "pull_request",
@@ -215,9 +212,8 @@ async def receive_webhook(
                     }
                 )
                 shared_queue.enqueue(job)
-                if not shared_queue.active:
-                    logger.info(f"Redis is inactive. Running check_suite job {job.job_id} in-memory via background task.")
-                    background_tasks.add_task(run_in_memory_job, job)
+                logger.info(f"Running check_suite job {job.job_id} synchronously.")
+                await run_in_memory_job(job)
                 return {
                     "status": "enqueued",
                     "event": "check_suite",
