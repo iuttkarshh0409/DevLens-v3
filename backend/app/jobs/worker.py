@@ -68,11 +68,13 @@ class Worker:
 
             # Enforce execution timeout constraint
             start_time = time.time()
+            logger.info(f"STAGE [ANALYZE REPOSITORY - START]: Running audit pipeline for {owner or 'local'}/{repo_name or 'local'} @ {head_sha or 'local'}")
             report = await asyncio.wait_for(
                 self.pipeline.execute_audit(repo_input),
                 timeout=self.job_timeout_sec
             )
             duration_ms = int((time.time() - start_time) * 1000)
+            logger.info(f"STAGE [ANALYZE REPOSITORY - SUCCESS]: Completed audit pipeline for {owner or 'local'}/{repo_name or 'local'} in {duration_ms}ms")
             
             if not report.execution.narrative_completed:
                 if job.retries < job.max_retries:
@@ -150,10 +152,14 @@ class Worker:
             # Publish Integration statuses
             if client:
                 raw_files = getattr(repo_input, "raw_files_content", {}) if not isinstance(repo_input, dict) else {}
+                logger.info(f"STAGE [PUBLISH RESULTS - START]: Submitting integration statuses to GitHub for {owner}/{repo_name}")
                 
                 if check_run_id:
                     checks_svc = ChecksService(client)
+                    conclusion = "success" if score >= 7.0 else "failure"
+                    logger.info(f"STAGE [UPDATE CHECK RUN - START]: Marking check run {check_run_id} as completed with conclusion: {conclusion}")
                     await checks_svc.complete_check(owner, repo_name, check_run_id, report.analysis, score, raw_files)
+                    logger.info(f"STAGE [UPDATE CHECK RUN - SUCCESS]: Successfully patched check run {check_run_id} as completed")
                 
                 if pull_number:
                     pr_svc = PRReviewService(client)
@@ -162,6 +168,8 @@ class Worker:
                 if head_sha:
                     status_svc = StatusService(client)
                     await status_svc.post_completion_status(owner, repo_name, head_sha, score)
+                
+                logger.info(f"STAGE [PUBLISH RESULTS - SUCCESS]: Finished submitting integration statuses to GitHub for {owner}/{repo_name}")
 
             job.status = JobStatus.COMPLETED
             self.jobs_processed += 1

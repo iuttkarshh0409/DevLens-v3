@@ -55,6 +55,22 @@ class TestWebhooks(unittest.TestCase):
     @patch("app.webhooks.router.GITHUB_WEBHOOK_SECRET", "test_webhook_secret_key")
     @patch("app.rie.pipeline.AuditPipeline.execute_audit", new_callable=AsyncMock)
     def test_push_event_success(self, mock_audit):
+        from unittest.mock import MagicMock
+        mock_report = MagicMock()
+        mock_report.execution.narrative_completed = True
+        mock_report.scorecard.overall_score = 8.5
+        mock_report.scorecard.scoring_version = "3.0"
+        mock_report.scorecard.rule_results = []
+        mock_report.analysis.frameworks = ["FastAPI"]
+        mock_report.analysis.languages = ["Python"]
+        mock_report.analysis.licenses = ["MIT"]
+        mock_report.analysis.ci = ["GitHub Actions"]
+        mock_report.analysis.testing = ["unittest"]
+        mock_report.analysis.deployment = ["Docker"]
+        mock_report.analysis.architecture = "Standard"
+        mock_report.analysis.results = {}
+        mock_audit.return_value = mock_report
+
         payload_data = {
             "ref": "refs/heads/main",
             "before": "00000",
@@ -179,8 +195,25 @@ class TestWebhooks(unittest.TestCase):
         self.assertEqual(check_suite_event.installation.id, 144438146)
 
     @patch("app.webhooks.router.GITHUB_WEBHOOK_SECRET", "test_webhook_secret_key")
+    @patch("app.rie.pipeline.AuditPipeline.execute_audit", new_callable=AsyncMock)
     @patch("app.services.github.status_service.StatusService.post_pending_status", new_callable=AsyncMock)
-    def test_check_suite_event_success(self, mock_post_status):
+    def test_check_suite_event_success(self, mock_post_status, mock_audit):
+        from unittest.mock import MagicMock
+        mock_report = MagicMock()
+        mock_report.execution.narrative_completed = True
+        mock_report.scorecard.overall_score = 8.5
+        mock_report.scorecard.scoring_version = "3.0"
+        mock_report.scorecard.rule_results = []
+        mock_report.analysis.frameworks = ["FastAPI"]
+        mock_report.analysis.languages = ["Python"]
+        mock_report.analysis.licenses = ["MIT"]
+        mock_report.analysis.ci = ["GitHub Actions"]
+        mock_report.analysis.testing = ["unittest"]
+        mock_report.analysis.deployment = ["Docker"]
+        mock_report.analysis.architecture = "Standard"
+        mock_report.analysis.results = {}
+        mock_audit.return_value = mock_report
+
         payload_data = {
             "action": "requested",
             "check_suite": {

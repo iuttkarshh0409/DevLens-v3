@@ -2,13 +2,23 @@ import hmac
 import hashlib
 import json
 from typing import Optional
-from fastapi import APIRouter, Request, HTTPException, Header
+from fastapi import APIRouter, Request, HTTPException, Header, BackgroundTasks
 from app.core.config import GITHUB_WEBHOOK_SECRET, DEVLENS_ENV
 from app.core.logging import logger
 from app.models.webhook import PushEvent, PullRequestEvent, InstallationEvent, RepositoryEvent, CheckSuiteEvent
 from app.rie.pipeline import AuditPipeline
+from app.jobs.models import AuditJob
 
 router = APIRouter(prefix="/github", tags=["webhooks"])
+
+async def run_in_memory_job(job: AuditJob):
+    """Fallback handler to process jobs in-memory when Redis queue is inactive."""
+    logger.info(f"Background task: starting in-memory execution of job {job.job_id}")
+    from app.jobs.worker import Worker
+    from app.jobs import shared_queue
+    worker = Worker(queue=shared_queue)
+    await worker.process_job(job)
+    logger.info(f"Background task: finished in-memory execution of job {job.job_id}")
 
 def verify_signature(payload_body: bytes, signature_header: Optional[str]) -> None:
     """Verifies that the webhook payload is signed with our secret key."""
@@ -32,6 +42,7 @@ def verify_signature(payload_body: bytes, signature_header: Optional[str]) -> No
 @router.post("/webhook")
 async def receive_webhook(
     request: Request,
+    background_tasks: BackgroundTasks,
     x_github_event: str = Header(..., alias="X-GitHub-Event"),
     x_github_delivery: str = Header(..., alias="X-GitHub-Delivery"),
     x_hub_signature_256: Optional[str] = Header(None, alias="X-Hub-Signature-256")
@@ -64,6 +75,9 @@ async def receive_webhook(
             
             repo_data = {
                 "name": event.repository.name,
+                "owner": event.repository.owner.login if event.repository.owner else event.repository.full_name.split("/")[0],
+                "installation_id": event.installation.id if event.installation else None,
+                "head_sha": event.after,
                 "stars": 0,
                 "last_updated": datetime_now_str(),
                 "readme": "README placeholder",
@@ -79,6 +93,9 @@ async def receive_webhook(
                 repo_data=repo_data
             )
             shared_queue.enqueue(job)
+            if not shared_queue.active:
+                logger.info(f"Redis is inactive. Running push job {job.job_id} in-memory via background task.")
+                background_tasks.add_task(run_in_memory_job, job)
             return {
                 "status": "enqueued",
                 "event": "push",
@@ -113,7 +130,9 @@ async def receive_webhook(
                         
                     try:
                         checks_svc = ChecksService(client)
+                        logger.info(f"STAGE [CREATE CHECK - START]: Creating initial check run for {owner}/{repo} @ {head_sha} via pull_request event")
                         check_run_id = await checks_svc.create_initial_check(owner, repo, head_sha)
+                        logger.info(f"STAGE [CREATE CHECK - SUCCESS]: Created check run with ID: {check_run_id}")
                     except Exception as e:
                         logger.error(f"Failed to create initial check run: {str(e)}")
                 
@@ -133,6 +152,9 @@ async def receive_webhook(
                     }
                 )
                 shared_queue.enqueue(job)
+                if not shared_queue.active:
+                    logger.info(f"Redis is inactive. Running pull_request job {job.job_id} in-memory via background task.")
+                    background_tasks.add_task(run_in_memory_job, job)
                 return {
                     "status": "enqueued",
                     "event": "pull_request",
@@ -172,7 +194,9 @@ async def receive_webhook(
                         
                     try:
                         checks_svc = ChecksService(client)
+                        logger.info(f"STAGE [CREATE CHECK - START]: Creating initial check run for {owner}/{repo} @ {head_sha} via check_suite event")
                         check_run_id = await checks_svc.create_initial_check(owner, repo, head_sha)
+                        logger.info(f"STAGE [CREATE CHECK - SUCCESS]: Created check run with ID: {check_run_id}")
                     except Exception as e:
                         logger.error(f"Failed to create initial check run: {str(e)}")
 
@@ -191,6 +215,9 @@ async def receive_webhook(
                     }
                 )
                 shared_queue.enqueue(job)
+                if not shared_queue.active:
+                    logger.info(f"Redis is inactive. Running check_suite job {job.job_id} in-memory via background task.")
+                    background_tasks.add_task(run_in_memory_job, job)
                 return {
                     "status": "enqueued",
                     "event": "check_suite",

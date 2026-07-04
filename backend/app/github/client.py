@@ -30,7 +30,7 @@ def generate_app_jwt() -> str:
         "iss": str(GITHUB_APP_ID)
     }
     
-    key_pem = GITHUB_APP_PRIVATE_KEY.replace("\\n", "\n")
+    key_pem = GITHUB_APP_PRIVATE_KEY.strip().strip('"').strip("'").replace("\\n", "\n")
     return jwt.encode(payload, key_pem, algorithm="RS256")
 
 async def get_installation_access_token(installation_id: int) -> str:
