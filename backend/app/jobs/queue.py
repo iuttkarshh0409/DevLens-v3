@@ -240,8 +240,10 @@ class RedisQueue(BaseQueue):
     def get_metrics(self) -> Dict[str, Any]:
         if not self.active:
             return self.fallback.get_metrics()
-        depth = self.client.llen("devlens:queue")
-        dlq_depth = self.client.llen("devlens:dlq")
+        pipe = self.client.pipeline()
+        pipe.llen("devlens:queue")
+        pipe.llen("devlens:dlq")
+        depth, dlq_depth = pipe.execute()
         return {
             "queue_depth": depth,
             "completed_jobs": 0,

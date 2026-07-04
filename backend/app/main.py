@@ -53,6 +53,14 @@ async def log_requests(request: Request, call_next):
 async def health_check():
     return {"status": "healthy", "service": "DevLens Analysis Engine"}
 
+from fastapi.responses import Response
+from app.observability.metrics import metrics_registry
+
+@app.get("/metrics")
+async def get_metrics():
+    content = metrics_registry.generate_prometheus_output()
+    return Response(content=content, media_type="text/plain; version=0.0.4; charset=utf-8")
+
 @app.post("/analyze")
 async def analyze_repository(request: Request, analyze_req: AnalyzeRequest):
     ctx = getattr(request.state, "request_context", None) or RequestContext()

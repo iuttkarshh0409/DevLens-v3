@@ -147,3 +147,10 @@ async def export_data(
         media_type="text/csv",
         headers={"Content-Disposition": f"attachment; filename=devlens_export_{installation_id}.csv"}
     )
+
+@router.delete("/cache")
+async def delete_cache(
+    installation_id: int = Query(..., description="The installation ID to invalidate cache for")
+):
+    invalidate_dashboard_cache(installation_id)
+    return {"status": "success", "message": f"Cache invalidated successfully for installation {installation_id}."}
