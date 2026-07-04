@@ -23,7 +23,7 @@ suite('DevLens VS Code Extension Test Suite', () => {
   test('Settings configurations return expected default schemas', () => {
     const config = vscode.workspace.getConfiguration('devlens');
     assert.strictEqual(config.get<string>('endpoint'), 'http://localhost:8000');
-    assert.strictEqual(config.get<boolean>('offlinePreferred'), true);
+    assert.strictEqual(config.get<boolean>('offlinePreferred'), false);
     assert.strictEqual(config.get<boolean>('autoAuditOnOpen'), false);
   });
 
@@ -43,6 +43,6 @@ suite('DevLens VS Code Extension Test Suite', () => {
 
   test('APIClient secretStorage property is registered', () => {
     const { APIClient } = require('../../client/api');
-    assert.ok(APIClient.hasOwnProperty('secretStorage'));
+    assert.ok(Object.prototype.hasOwnProperty.call(APIClient, 'secretStorage'));
   });
 });

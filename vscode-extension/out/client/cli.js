@@ -36,6 +36,19 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CLIClient = void 0;
 const cp = __importStar(require("child_process"));
 class CLIClient {
+    static async isAvailable() {
+        return new Promise((resolve) => {
+            cp.exec('devlens --version', (error) => {
+                if (error) {
+                    if (error.code === 'ENOENT' || error.message.includes('not found') || error.message.includes('is not recognized')) {
+                        resolve(false);
+                        return;
+                    }
+                }
+                resolve(true);
+            });
+        });
+    }
     static async executeOfflineAudit(workspacePath) {
         return new Promise((resolve, reject) => {
             // Execute the local CLI audit command in offline mode
@@ -44,7 +57,7 @@ class CLIClient {
                 if (error) {
                     // If cli tool is missing on system path
                     if (error.code === 'ENOENT' || error.message.includes('not found') || error.message.includes('is not recognized')) {
-                        return reject(new Error('DevLens CLI is not installed or not found on system PATH. Please run "pip install ./backend".'));
+                        return reject(new Error('Offline audits require the DevLens CLI to be installed and available on your PATH. Install it first, then retry offline mode.'));
                     }
                     // If execution failed but still returned output
                     if (!stdout) {

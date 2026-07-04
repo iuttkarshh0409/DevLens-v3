@@ -54,7 +54,7 @@ suite('DevLens VS Code Extension Test Suite', () => {
     test('Settings configurations return expected default schemas', () => {
         const config = vscode.workspace.getConfiguration('devlens');
         assert.strictEqual(config.get('endpoint'), 'http://localhost:8000');
-        assert.strictEqual(config.get('offlinePreferred'), true);
+        assert.strictEqual(config.get('offlinePreferred'), false);
         assert.strictEqual(config.get('autoAuditOnOpen'), false);
     });
     test('DiagnosticsManager should clear correctly without errors', () => {
@@ -68,6 +68,10 @@ suite('DevLens VS Code Extension Test Suite', () => {
             statusbar_1.DevLensStatusBar.showPlaceholder();
             statusbar_1.DevLensStatusBar.hide();
         });
+    });
+    test('APIClient secretStorage property is registered', () => {
+        const { APIClient } = require('../../client/api');
+        assert.ok(Object.prototype.hasOwnProperty.call(APIClient, 'secretStorage'));
     });
 });
 //# sourceMappingURL=extension.test.js.map

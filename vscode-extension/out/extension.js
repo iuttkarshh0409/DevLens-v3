@@ -79,19 +79,28 @@ function activate(context) {
             try {
                 let report;
                 if (preferOffline) {
+                    const cliAvailable = await cli_1.CLIClient.isAvailable();
+                    if (!cliAvailable) {
+                        throw new Error('Offline mode is enabled, but the DevLens CLI is not installed or not on your PATH. Install the DevLens CLI before running offline audits, or disable offline mode to use the API workflow.');
+                    }
                     progress.report({ message: "Running local compliance scans..." });
                     report = await cli_1.CLIClient.executeOfflineAudit(workspaceRoot);
                 }
                 else {
                     progress.report({ message: "Requesting remote API audit..." });
-                    // Online audit needs a repo URL - fallback to offline folder if not a remote repo
+                    // Online audit needs a repo URL
                     const repoUrl = await getGitRemoteUrl(workspaceRoot) || workspaceRoot;
                     if (repoUrl.startsWith('http') || repoUrl.includes('github.com')) {
-                        report = await api_1.APIClient.executeOnlineAudit(repoUrl);
+                        try {
+                            report = await api_1.APIClient.executeOnlineAudit(repoUrl);
+                        }
+                        catch (error) {
+                            const cliAvailable = await cli_1.CLIClient.isAvailable();
+                            throw new Error(await formatOnlineAuditError(error, cliAvailable));
+                        }
                     }
                     else {
-                        progress.report({ message: "No remote git URL. Falling back to offline scanner..." });
-                        report = await cli_1.CLIClient.executeOfflineAudit(workspaceRoot);
+                        throw new Error('No Git remote URL was found for this workspace. Connect the workspace to a GitHub remote to use the API workflow, or explicitly enable offline mode after installing the DevLens CLI.');
                     }
                 }
                 // Cache report & update UI
@@ -122,6 +131,10 @@ function activate(context) {
             cancellable: false
         }, async () => {
             try {
+                const cliAvailable = await cli_1.CLIClient.isAvailable();
+                if (!cliAvailable) {
+                    throw new Error('Offline audits require the DevLens CLI to be installed and available on your PATH. Install the DevLens CLI before retrying this command.');
+                }
                 const report = await cli_1.CLIClient.executeOfflineAudit(workspaceRoot);
                 lastReport = report;
                 treeProvider.refresh(report);
@@ -197,5 +210,23 @@ async function getGitRemoteUrl(workspacePath) {
             resolve(stdout.trim());
         });
     });
+}
+async function formatOnlineAuditError(error, cliAvailable) {
+    const config = vscode.workspace.getConfiguration('devlens');
+    const endpoint = config.get('endpoint', 'http://localhost:8000');
+    const normalizedEndpoint = endpoint.trim().toLowerCase();
+    const isDefaultLocalEndpoint = normalizedEndpoint === 'http://localhost:8000'
+        || normalizedEndpoint === 'http://127.0.0.1:8000'
+        || normalizedEndpoint === 'http://[::1]:8000';
+    if (error.message.startsWith('API Connection Failed:')) {
+        const offlineGuidance = cliAvailable
+            ? 'You can also enable Offline Mode to use the DevLens CLI for local audits.'
+            : 'You can also enable Offline Mode after installing the DevLens CLI for local audits.';
+        if (isDefaultLocalEndpoint) {
+            return `DevLens Server is not running at the default endpoint (${endpoint}). Start DevLens Server locally, configure 'devlens.endpoint' to your production DevLens API, or use Offline Mode if the DevLens CLI is installed. ${offlineGuidance}`;
+        }
+        return `DevLens could not reach the configured API endpoint (${endpoint}). Verify that the server is running and reachable, update 'devlens.endpoint' to a valid production DevLens API if needed, or use Offline Mode if the DevLens CLI is installed. ${offlineGuidance}`;
+    }
+    return error.message;
 }
 //# sourceMappingURL=extension.js.map

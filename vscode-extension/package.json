@@ -58,8 +58,8 @@
         },
         "devlens.offlinePreferred": {
           "type": "boolean",
-          "default": true,
-          "description": "Prefer local offline execution through DevLens CLI over online API requests."
+          "default": false,
+          "description": "Prefer local offline execution through the DevLens CLI over online API requests."
         },
         "devlens.autoAuditOnOpen": {
           "type": "boolean",
