@@ -10,6 +10,9 @@ pyjwt==2.13.0
 cryptography==49.0.0
 redis==8.0.1
 pyyaml==6.0.1
+typer[all]>=0.9.0
+rich>=13.0.0
+
 
 
 
