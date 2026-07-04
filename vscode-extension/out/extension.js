@@ -46,6 +46,18 @@ let lastReport = null;
 const treeProvider = new tree_1.DevLensTreeProvider();
 function activate(context) {
     console.log('DevLens VS Code Extension is active!');
+    // Bind secret storage to APIClient
+    api_1.APIClient.secretStorage = context.secrets;
+    // Auto-migrate legacy plaintext token configuration to VS Code SecretStorage
+    (async () => {
+        const config = vscode.workspace.getConfiguration('devlens');
+        const legacyToken = config.get('token');
+        if (legacyToken) {
+            await context.secrets.store('devlens.token', legacyToken);
+            await config.update('token', undefined, vscode.ConfigurationTarget.Global);
+            console.log('Successfully migrated token to VS Code SecretStorage.');
+        }
+    })();
     // Initialize UI Widgets
     statusbar_1.DevLensStatusBar.initialize();
     vscode.window.registerTreeDataProvider('devlensExplorer', treeProvider);
@@ -141,13 +153,13 @@ function activate(context) {
             password: true
         });
         if (token) {
-            await vscode.workspace.getConfiguration('devlens').update('token', token, vscode.ConfigurationTarget.Global);
+            await context.secrets.store('devlens.token', token);
             vscode.window.showInformationMessage('DevLens token updated successfully.');
         }
     });
     // 5. Logout Command
     const logoutCommand = vscode.commands.registerCommand('devlens.logout', async () => {
-        await vscode.workspace.getConfiguration('devlens').update('token', '', vscode.ConfigurationTarget.Global);
+        await context.secrets.delete('devlens.token');
         vscode.window.showInformationMessage('DevLens credentials cleared.');
     });
     // 6. Open Report Panel

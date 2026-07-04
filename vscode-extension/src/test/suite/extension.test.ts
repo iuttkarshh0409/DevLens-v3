@@ -40,4 +40,9 @@ suite('DevLens VS Code Extension Test Suite', () => {
       DevLensStatusBar.hide();
     });
   });
+
+  test('APIClient secretStorage property is registered', () => {
+    const { APIClient } = require('../../client/api');
+    assert.ok(APIClient.hasOwnProperty('secretStorage'));
+  });
 });

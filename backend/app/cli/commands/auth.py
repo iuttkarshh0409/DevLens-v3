@@ -17,8 +17,9 @@ def login(
         raise typer.Exit(code=1)
         
     # Write token to file
+    from app.cli.security import encrypt_token
     config_data = load_file_config()
-    config_data["token"] = token
+    config_data["token"] = encrypt_token(token)
     write_file_config(config_data)
     
     # Verify token by checking health endpoint

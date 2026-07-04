@@ -39,14 +39,21 @@ const http = __importStar(require("http"));
 const https = __importStar(require("https"));
 const url_1 = require("url");
 class APIClient {
-    static getConfiguration() {
+    static secretStorage;
+    static async getConfiguration() {
         const config = vscode.workspace.getConfiguration('devlens');
         const endpoint = config.get('endpoint', 'http://localhost:8000');
-        const token = config.get('token', '');
+        let token = '';
+        if (APIClient.secretStorage) {
+            token = await APIClient.secretStorage.get('devlens.token') || '';
+        }
+        if (!token) {
+            token = config.get('token', '');
+        }
         return { endpoint, token };
     }
-    static request(method, path, body) {
-        const { endpoint, token } = this.getConfiguration();
+    static async request(method, path, body) {
+        const { endpoint, token } = await this.getConfiguration();
         const targetUrl = new url_1.URL(path, endpoint);
         const headers = {
             'Content-Type': 'application/json',

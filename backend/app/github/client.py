@@ -110,16 +110,56 @@ class GitHubClient:
             
         return headers
 
+    async def request_api(self, client: httpx.AsyncClient, method: str, url: str, **kwargs) -> httpx.Response:
+        """Execute request with GitHub API rate limit awareness and backoff retries."""
+        headers = await self.get_headers()
+        if "headers" in kwargs:
+            kwargs["headers"] = {**headers, **kwargs["headers"]}
+        else:
+            kwargs["headers"] = headers
+
+        response = await client.request(method, url, **kwargs)
+        
+        remaining = response.headers.get("X-RateLimit-Remaining")
+        reset_time = response.headers.get("X-RateLimit-Reset")
+        retry_after = response.headers.get("Retry-After")
+        
+        if remaining is not None:
+            rem = int(remaining)
+            if rem == 0 or response.status_code in (403, 429):
+                logger.warning("GitHub API rate limit exhausted.")
+                if retry_after:
+                    sleep_sec = int(retry_after)
+                    logger.info(f"Backing off for {sleep_sec} seconds (Retry-After)...")
+                    await asyncio.sleep(sleep_sec)
+                    return await client.request(method, url, **kwargs)
+                elif reset_time:
+                    reset_epoch = int(reset_time)
+                    sleep_sec = max(0, reset_epoch - int(time.time()))
+                    if sleep_sec > 60:
+                        raise GitHubApiException(
+                            status_code=429,
+                            message=f"GitHub API rate limit exhausted. Resets in {sleep_sec} seconds."
+                        )
+                    logger.info(f"Backing off for {sleep_sec} seconds (Reset time)...")
+                    await asyncio.sleep(sleep_sec)
+                    return await client.request(method, url, **kwargs)
+                else:
+                    raise GitHubApiException(status_code=429, message="GitHub API rate limit exhausted.")
+            elif rem < 10:
+                logger.warning(f"GitHub API rate limit is low: {rem} remaining.")
+                
+        return response
+
     async def fetch(self, owner: str, repo: str, context: Optional[RequestContext] = None) -> RepositorySnapshot:
         if context:
             self.context = context
             
-        headers = await self.get_headers()
         async with httpx.AsyncClient(timeout=10.0) as client:
             try:
                 # 1. Fetch main repo metadata to find default branch
                 meta_url = f"https://api.github.com/repos/{owner}/{repo}"
-                meta_res = await client.get(meta_url, headers=headers)
+                meta_res = await self.request_api(client, "GET", meta_url)
                 
                 if meta_res.status_code == 404:
                     raise GitHubApiException(status_code=404, message="Repository not found or private.")
@@ -136,8 +176,8 @@ class GitHubClient:
                 tree_url = f"{meta_url}/git/trees/{default_branch}?recursive=1"
                 
                 tasks = [
-                    client.get(readme_url, headers=headers),
-                    client.get(tree_url, headers=headers)
+                    self.request_api(client, "GET", readme_url),
+                    self.request_api(client, "GET", tree_url)
                 ]
                 
                 responses = await asyncio.gather(*tasks, return_exceptions=True)
@@ -156,13 +196,12 @@ class GitHubClient:
                 tree_res = responses[1]
                 if not isinstance(tree_res, Exception) and tree_res.status_code == 200:
                     tree_data = tree_res.json()
-                    # Filter items that are files (type 'blob') and append their full paths
                     items = tree_data.get("tree", [])
                     files = [item["path"] for item in items if item.get("type") == "blob"]
                 else:
                     # Fallback to flat contents if trees API failed or was empty
                     contents_url = f"{meta_url}/contents"
-                    cont_res = await client.get(contents_url, headers=headers)
+                    cont_res = await self.request_api(client, "GET", contents_url)
                     if cont_res.status_code == 200:
                         data = cont_res.json()
                         files = [f['name'] for f in data] if isinstance(data, list) else []
@@ -202,10 +241,9 @@ class GitHubClient:
 
     async def create_check_run(self, owner: str, repo: str, payload: Dict[str, Any]) -> Dict[str, Any]:
         """Creates a check run on the target repository."""
-        headers = await self.get_headers()
         url = f"https://api.github.com/repos/{owner}/{repo}/check-runs"
         async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.post(url, headers=headers, json=payload)
+            response = await self.request_api(client, "POST", url, json=payload)
             if response.status_code != 201:
                 logger.error(f"Failed to create check run: {response.text}")
                 raise GitHubApiException(status_code=response.status_code, message="Check run creation failure.")
@@ -213,10 +251,9 @@ class GitHubClient:
 
     async def update_check_run(self, owner: str, repo: str, check_run_id: int, payload: Dict[str, Any]) -> Dict[str, Any]:
         """Updates an existing check run."""
-        headers = await self.get_headers()
         url = f"https://api.github.com/repos/{owner}/{repo}/check-runs/{check_run_id}"
         async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.patch(url, headers=headers, json=payload)
+            response = await self.request_api(client, "PATCH", url, json=payload)
             if response.status_code != 200:
                 logger.error(f"Failed to update check run: {response.text}")
                 raise GitHubApiException(status_code=response.status_code, message="Check run update failure.")
@@ -224,10 +261,9 @@ class GitHubClient:
 
     async def create_pr_review(self, owner: str, repo: str, pull_number: int, payload: Dict[str, Any]) -> Dict[str, Any]:
         """Creates a pull request review with annotations/comments."""
-        headers = await self.get_headers()
         url = f"https://api.github.com/repos/{owner}/{repo}/pulls/{pull_number}/reviews"
         async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.post(url, headers=headers, json=payload)
+            response = await self.request_api(client, "POST", url, json=payload)
             if response.status_code != 200:
                 logger.error(f"Failed to submit PR review: {response.text}")
                 raise GitHubApiException(status_code=response.status_code, message="PR review creation failure.")
@@ -235,10 +271,9 @@ class GitHubClient:
 
     async def post_commit_status(self, owner: str, repo: str, sha: str, payload: Dict[str, Any]) -> Dict[str, Any]:
         """Creates a commit status mapping to a target SHA."""
-        headers = await self.get_headers()
         url = f"https://api.github.com/repos/{owner}/{repo}/statuses/{sha}"
         async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.post(url, headers=headers, json=payload)
+            response = await self.request_api(client, "POST", url, json=payload)
             if response.status_code != 201:
                 logger.error(f"Failed to post commit status: {response.text}")
                 raise GitHubApiException(status_code=response.status_code, message="Commit status creation failure.")
@@ -246,12 +281,11 @@ class GitHubClient:
 
     async def fetch_file_content(self, owner: str, repo: str, path: str, ref: Optional[str] = None) -> str:
         """Fetches the raw text content of a file from a repository at a specific ref."""
-        headers = await self.get_headers()
         url = f"https://api.github.com/repos/{owner}/{repo}/contents/{path}"
         if ref:
             url += f"?ref={ref}"
         async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.get(url, headers=headers)
+            response = await self.request_api(client, "GET", url)
             if response.status_code != 200:
                 raise GitHubApiException(status_code=response.status_code, message=f"Failed to fetch file content for {path}.")
             

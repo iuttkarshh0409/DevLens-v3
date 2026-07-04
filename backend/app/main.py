@@ -11,7 +11,31 @@ from app.webhooks.router import router as webhooks_router
 from app.api.badges import router as badges_router
 from app.api.analytics import router as analytics_router
 
-app = FastAPI(title="DevLens Analysis API")
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup lifecycle hooks
+    logger.info("Initializing DevLens Analysis API...")
+    yield
+    # Shutdown lifecycle hooks
+    logger.info("DevLens Shutting down services...")
+    
+    # 1. Dispose SQLAlchemy connection pools
+    from app.database.connection import engine
+    await engine.dispose()
+    logger.info("SQLAlchemy connection engine pool disposed.")
+    
+    # 2. Close Redis client connection
+    from app.api.analytics import redis_client
+    if redis_client:
+        try:
+            redis_client.close()
+            logger.info("Redis cache client closed.")
+        except Exception:
+            pass
+
+app = FastAPI(title="DevLens Analysis API", lifespan=lifespan)
 
 # Include Routers
 app.include_router(webhooks_router)
@@ -21,16 +45,20 @@ app.include_router(analytics_router)
 # Initialize Audit Service
 audit_service = AuditService()
 
+from app.core.config import ALLOWED_ORIGINS, DEVLENS_ENV
+
 # CORS Middleware
+origins = ALLOWED_ORIGINS if DEVLENS_ENV.lower() == "production" else [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://[::1]:5173",
+    "http://localhost:3000",
+    "https://dev-lens-lime.vercel.app",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://[::1]:5173",
-        "http://localhost:3000",
-        "https://dev-lens-lime.vercel.app",
-    ],
+    allow_origins=origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )

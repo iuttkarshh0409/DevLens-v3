@@ -18,6 +18,15 @@
     "metrics",
     "telemetry"
   ],
+  "bugs": {
+    "url": "https://github.com/iuttkarshh0409/DevLens-v3/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/iuttkarshh0409/DevLens-v3.git"
+  },
+  "homepage": "https://github.com/iuttkarshh0409/DevLens-v3#readme",
+  "license": "MIT",
   "activationEvents": [],
   "main": "./out/extension.js",
   "scripts": {
@@ -46,11 +55,6 @@
           "type": "string",
           "default": "http://localhost:8000",
           "description": "The URL of the DevLens API backend server."
-        },
-        "devlens.token": {
-          "type": "string",
-          "default": "",
-          "description": "DevLens Personal Access Token (PAT) for API operations."
         },
         "devlens.offlinePreferred": {
           "type": "boolean",

@@ -18,12 +18,16 @@ RETENTION_DAYS = int(os.getenv("RETENTION_DAYS", "180"))
 SQL_POOL_SIZE = int(os.getenv("SQL_POOL_SIZE", "5"))
 SQL_MAX_OVERFLOW = int(os.getenv("SQL_MAX_OVERFLOW", "10"))
 
+ALLOWED_ORIGINS = [origin.strip() for origin in os.getenv("ALLOWED_ORIGINS", "").split(",") if origin.strip()]
+
 # Production validations at startup
 if DEVLENS_ENV.lower() == "production":
     if not GITHUB_WEBHOOK_SECRET:
         raise ValueError("CRITICAL CONFIGURATION ERROR: GITHUB_WEBHOOK_SECRET must be set in production mode.")
     if not GITHUB_APP_ID or not GITHUB_APP_PRIVATE_KEY:
         raise ValueError("CRITICAL CONFIGURATION ERROR: GITHUB_APP_ID and GITHUB_APP_PRIVATE_KEY must be set in production mode.")
+    if not ALLOWED_ORIGINS:
+        raise ValueError("CRITICAL CONFIGURATION ERROR: ALLOWED_ORIGINS must be set in production mode.")
     if "sqlite" in DATABASE_URL.lower():
         # Warn or restrict sqlite in production environment
         pass

@@ -113,9 +113,13 @@ class TestDevLensCLI(unittest.TestCase):
         result = runner.invoke(app, ["login", "--token", "test-pat-token"])
         self.assertEqual(result.exit_code, 0)
         
-        # Verify saved token
-        from app.cli.commands.config import load_file_config
-        self.assertEqual(load_file_config().get("token"), "test-pat-token")
+        # Verify token gets encrypted in raw storage config
+        from app.cli.commands.config import load_file_config, get_active_config
+        raw_token = load_file_config().get("token")
+        self.assertTrue(raw_token.startswith("enc:"))
+        
+        # Verify configuration resolution decrypts it transparently
+        self.assertEqual(get_active_config()["token"], "test-pat-token")
         
         # Check whoami outputs correctly
         whoami_res = runner.invoke(app, ["whoami"])

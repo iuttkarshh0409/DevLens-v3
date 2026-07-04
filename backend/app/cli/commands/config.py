@@ -88,7 +88,18 @@ def get_active_config(
     if not token:
         token = os.getenv("DEVLENS_TOKEN")
     if not token:
-        token = file_cfg.get("token")
+        raw_token = file_cfg.get("token")
+        if raw_token:
+            from app.cli.security import decrypt_token
+            token = decrypt_token(raw_token)
+            # Auto-migrate legacy plaintext tokens to Fernet encrypted format
+            if not raw_token.startswith("enc:"):
+                from app.cli.security import encrypt_token
+                file_cfg["token"] = encrypt_token(raw_token)
+                try:
+                    write_file_config(file_cfg)
+                except Exception:
+                    pass
     if not token:
         token = DEFAULT_DEFS["token"]
 
@@ -176,6 +187,9 @@ def config_set(
         except ValueError:
             typer.echo(f"Error: Configuration key '{key}' must be an integer.")
             raise typer.Exit(code=1)
+    elif key == "token":
+        from app.cli.security import encrypt_token
+        merged[key] = encrypt_token(value)
     else:
         merged[key] = value
         

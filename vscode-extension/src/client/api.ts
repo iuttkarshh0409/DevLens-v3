@@ -5,15 +5,23 @@ import { URL } from 'url';
 import { AuditReport } from './cli';
 
 export class APIClient {
-  private static getConfiguration() {
+  public static secretStorage: vscode.SecretStorage | undefined;
+
+  private static async getConfiguration() {
     const config = vscode.workspace.getConfiguration('devlens');
     const endpoint = config.get<string>('endpoint', 'http://localhost:8000');
-    const token = config.get<string>('token', '');
+    let token = '';
+    if (APIClient.secretStorage) {
+      token = await APIClient.secretStorage.get('devlens.token') || '';
+    }
+    if (!token) {
+      token = config.get<string>('token', '');
+    }
     return { endpoint, token };
   }
 
-  private static request(method: string, path: string, body?: any): Promise<any> {
-    const { endpoint, token } = this.getConfiguration();
+  private static async request(method: string, path: string, body?: any): Promise<any> {
+    const { endpoint, token } = await this.getConfiguration();
     const targetUrl = new URL(path, endpoint);
     
     const headers: Record<string, string> = {
