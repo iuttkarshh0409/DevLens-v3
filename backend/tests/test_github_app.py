@@ -22,7 +22,7 @@ class TestGitHubApp(unittest.TestCase):
             # Assert payload checks
             args, kwargs = mock_encode.call_args
             payload = args[0]
-            self.assertEqual(payload["iss"], 12345)
+            self.assertEqual(payload["iss"], "12345")
             self.assertIn("iat", payload)
             self.assertIn("exp", payload)
 

@@ -27,7 +27,7 @@ def generate_app_jwt() -> str:
     payload = {
         "iat": now - 60,
         "exp": now + (10 * 60),  # 10 minutes expiry
-        "iss": int(GITHUB_APP_ID)
+        "iss": str(GITHUB_APP_ID)
     }
     
     key_pem = GITHUB_APP_PRIVATE_KEY.replace("\\n", "\n")
