@@ -6,8 +6,8 @@ This report documents the design, architecture, and validation of the integrated
 
 ## 📂 Refactored & Integrated Modules
 
-* **[audit.py](file:///d:/Side Projects/utility-projects/DevLens/backend/app/services/audit.py)**: The newly created `AuditService` layer that connects fetching metadata, pipeline execution, and formatting output payloads.
-* **[main.py](file:///d:/Side Projects/utility-projects/DevLens/backend/app/main.py)**: Updated to route incoming `/analyze` requests directly to `AuditService`.
+* **[audit.py](../../../../../Side Projects/utility-projects/DevLens/backend/app/services/audit.py)**: The newly created `AuditService` layer that connects fetching metadata, pipeline execution, and formatting output payloads.
+* **[main.py](../../../../../Side Projects/utility-projects/DevLens/backend/app/main.py)**: Updated to route incoming `/analyze` requests directly to `AuditService`.
 
 ---
 
@@ -37,3 +37,4 @@ The service layer automatically gathers execution timings and logs:
 All endpoints (including health status and success/error request validations) have been tested in the local virtual environment:
 * **Command**: `..\venv\Scripts\python -m unittest discover tests`
 * **Output**: `Ran 15 tests - OK`
+

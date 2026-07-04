@@ -32,7 +32,7 @@ Now, pull requests failing to meet a 7.0 score will block merge actions until re
 Use our SVG badge API in your README files to display code scores dynamically:
 
 ```markdown
-![DevLens Score](http://localhost:8000/api/badge?label=devlens&value=8.5&metric=score)
+![DevLens Score](https://<your-devlens-server>/api/badge?label=devlens&value=8.5&metric=score)
 ```
 
 ### URL Parameters:
@@ -41,3 +41,4 @@ Use our SVG badge API in your README files to display code scores dynamically:
 - `metric`: `score` or `status` (activates color schemes).
 - `style`: `flat`, `flat-square`, or `plastic`.
 - `color`: Custom HEX color override.
+

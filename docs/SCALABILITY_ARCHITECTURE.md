@@ -20,7 +20,7 @@ graph LR
 ---
 
 ## 2. Request Context Propagation
-We implemented request-level context propagation in [tracing.py](file:///d:/Side%20Projects/utility-projects/DevLens/backend/app/observability/tracing.py):
+We implemented request-level context propagation in [tracing.py](../backend/app/observability/tracing.py):
 - Uses Python `contextvars` to pass trace tokens across async loops.
 - Automatically correlates HTTP requests, background tasks, and SQL sessions.
 
@@ -28,3 +28,5 @@ We implemented request-level context propagation in [tracing.py](file:///d:/Side
 
 ## 3. Redis Circuit Breaker
 If the Redis cache or queue container goes down, a built-in circuit breaker automatically redirects operations to local in-memory alternatives, preserving application availability.
+
+

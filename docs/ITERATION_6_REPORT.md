@@ -6,8 +6,8 @@ This report documents the design, architecture, and validation of the stateless 
 
 ## 📂 Newly Refactored & Created Modules
 
-* **[client.py](file:///d:/Side Projects/utility-projects/DevLens/backend/app/github/client.py)**: Refactored from the legacy `GitHubFetcher` to a unified `GitHubClient` class supporting App JWT signing, installation-token exchanges, and PAT fallbacks.
-* **[main.py](file:///d:/Side Projects/utility-projects/DevLens/backend/app/main.py)**: Added endpoints for installation redirect (`GET /app/install`) and callback verification (`GET /app/callback`).
+* **[client.py](../../../../../Side Projects/utility-projects/DevLens/backend/app/github/client.py)**: Refactored from the legacy `GitHubFetcher` to a unified `GitHubClient` class supporting App JWT signing, installation-token exchanges, and PAT fallbacks.
+* **[main.py](../../../../../Side Projects/utility-projects/DevLens/backend/app/main.py)**: Added endpoints for installation redirect (`GET /app/install`) and callback verification (`GET /app/callback`).
 
 ---
 
@@ -35,3 +35,4 @@ graph TD
 All test cases for JWT claims, strategy selection, callback triggers, and unified client fallbacks run and pass successfully:
 * **Command**: `..\venv\Scripts\python -m unittest discover tests`
 * **Output**: `Ran 22 tests - OK`
+

@@ -7,12 +7,12 @@ This report documents the design, modular rule implementation, and validation of
 ## 📂 Scoring Engine Modules
 All files reside in the newly created `app/scoring/` package:
 
-* **[models.py](file:///d:/Side Projects/utility-projects/DevLens/backend/app/scoring/models.py)**: Defines scoring schemas (`RuleResult`, `CategoryScore`, and the master `ScoreReport`).
-* **[rules.py](file:///d:/Side Projects/utility-projects/DevLens/backend/app/scoring/rules.py)**: Implements 10 deterministic rules mapped to their categories, and registers them dynamically with `RuleRegistry`.
-* **[weights.py](file:///d:/Side Projects/utility-projects/DevLens/backend/app/scoring/weights.py)**: Maps categories to floating-point influence weights.
-* **[caps.py](file:///d:/Side Projects/utility-projects/DevLens/backend/app/scoring/caps.py)**: Holds visual grade cap calculators (enforcing the 7.0 ceiling if tests or CI/CD are missing).
-* **[version.py](file:///d:/Side Projects/utility-projects/DevLens/backend/app/scoring/version.py)**: Locks the scoring algorithm to version `"3.0.0"`.
-* **[engine.py](file:///d:/Side Projects/utility-projects/DevLens/backend/app/scoring/engine.py)**: Executes rule validations on RIE `RepositoryAnalysis` structures.
+* **[models.py](../../../../../Side Projects/utility-projects/DevLens/backend/app/scoring/models.py)**: Defines scoring schemas (`RuleResult`, `CategoryScore`, and the master `ScoreReport`).
+* **[rules.py](../../../../../Side Projects/utility-projects/DevLens/backend/app/scoring/rules.py)**: Implements 10 deterministic rules mapped to their categories, and registers them dynamically with `RuleRegistry`.
+* **[weights.py](../../../../../Side Projects/utility-projects/DevLens/backend/app/scoring/weights.py)**: Maps categories to floating-point influence weights.
+* **[caps.py](../../../../../Side Projects/utility-projects/DevLens/backend/app/scoring/caps.py)**: Holds visual grade cap calculators (enforcing the 7.0 ceiling if tests or CI/CD are missing).
+* **[version.py](../../../../../Side Projects/utility-projects/DevLens/backend/app/scoring/version.py)**: Locks the scoring algorithm to version `"3.0.0"`.
+* **[engine.py](../../../../../Side Projects/utility-projects/DevLens/backend/app/scoring/engine.py)**: Executes rule validations on RIE `RepositoryAnalysis` structures.
 
 ---
 
@@ -52,3 +52,4 @@ All test cases for category scoring, individual rules, and ceilings compile and 
 
 ## 🚀 Preparation for Iteration 3
 In **Iteration 3**, we will integrate the RIE Orchestrator and the Scoring Engine into the FastAPI routing layer, enabling live audits using the combined local evidence pipeline.
+

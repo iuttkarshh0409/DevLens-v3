@@ -17,16 +17,18 @@ This report summarizes the deliverables, architectural changes, and validation r
 ---
 
 ## 2. Deliverables Added
-- [backend/app/database/connection.py](file:///d:/Side%20Projects/utility-projects/DevLens/backend/app/database/connection.py): Async engine, session factories.
-- [backend/app/database/models.py](file:///d:/Side%20Projects/utility-projects/DevLens/backend/app/database/models.py): Declared SQLAlchemy mappings.
-- [backend/app/storage/sql_analytics_store.py](file:///d:/Side%20Projects/utility-projects/DevLens/backend/app/storage/sql_analytics_store.py): SQL database adapter.
-- [backend/alembic/](file:///d:/Side%20Projects/utility-projects/DevLens/backend/alembic/): Alembic files.
-- [docker-compose.yml](file:///d:/Side%20Projects/utility-projects/DevLens/docker-compose.yml): Production container orchestration files.
-- [docs/PERSISTENCE_ARCHITECTURE.md](file:///d:/Side%20Projects/utility-projects/DevLens/docs/PERSISTENCE_ARCHITECTURE.md): Structural layout and guidelines documentation.
+- [backend/app/database/connection.py](../backend/app/database/connection.py): Async engine, session factories.
+- [backend/app/database/models.py](../backend/app/database/models.py): Declared SQLAlchemy mappings.
+- [backend/app/storage/sql_analytics_store.py](../backend/app/storage/sql_analytics_store.py): SQL database adapter.
+- [backend/alembic/](../backend/alembic/): Alembic files.
+- [docker-compose.yml](../docker-compose.yml): Production container orchestration files.
+- [docs/PERSISTENCE_ARCHITECTURE.md](./PERSISTENCE_ARCHITECTURE.md): Structural layout and guidelines documentation.
 
 ---
 
 ## 3. Verification & Regressions Checks
-- **New Unit Tests**: Created [backend/tests/test_persistence.py](file:///d:/Side%20Projects/utility-projects/DevLens/backend/tests/test_persistence.py) verifying async SQL storage, count/time-based retention cleanup limits, and Redis cache invalidations.
+- **New Unit Tests**: Created [backend/tests/test_persistence.py](../backend/tests/test_persistence.py) verifying async SQL storage, count/time-based retention cleanup limits, and Redis cache invalidations.
 - **Async Adaptations**: Updated existing test assertions to correctly compile with `async def` and `await` wrappers.
 - **Test Discover Run**: Verified all **61 unit tests** are green and running successfully (`OK`).
+
+

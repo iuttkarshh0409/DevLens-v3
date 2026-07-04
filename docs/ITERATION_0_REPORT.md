@@ -9,26 +9,26 @@ This report summarizes the engineering refactoring performed to restructure DevL
 ### Backend Refactored Layout
 The monolithic logic in `backend/app/main.py` has been split into dedicated modules:
 
-* **[config.py](file:///d:/Side Projects/utility-projects/DevLens/backend/app/core/config.py)**: Centralizes environment reading and Groq API client initialization.
-* **[logging.py](file:///d:/Side Projects/utility-projects/DevLens/backend/app/core/logging.py)**: Houses system-wide logging setups.
-* **[request.py](file:///d:/Side Projects/utility-projects/DevLens/backend/app/models/request.py)**: Contains Pydantic data schemas.
-* **[parser.py](file:///d:/Side Projects/utility-projects/DevLens/backend/app/github/parser.py)**: Modularized repository URL parser.
-* **[client.py](file:///d:/Side Projects/utility-projects/DevLens/backend/app/github/client.py)**: Contains the `GitHubFetcher` class logic.
-* **[analyzer.py](file:///d:/Side Projects/utility-projects/DevLens/backend/app/ai/analyzer.py)**: Houses the deterministic LLM analysis service.
+* **[config.py](../../../../../Side Projects/utility-projects/DevLens/backend/app/core/config.py)**: Centralizes environment reading and Groq API client initialization.
+* **[logging.py](../../../../../Side Projects/utility-projects/DevLens/backend/app/core/logging.py)**: Houses system-wide logging setups.
+* **[request.py](../../../../../Side Projects/utility-projects/DevLens/backend/app/models/request.py)**: Contains Pydantic data schemas.
+* **[parser.py](../../../../../Side Projects/utility-projects/DevLens/backend/app/github/parser.py)**: Modularized repository URL parser.
+* **[client.py](../../../../../Side Projects/utility-projects/DevLens/backend/app/github/client.py)**: Contains the `GitHubFetcher` class logic.
+* **[analyzer.py](../../../../../Side Projects/utility-projects/DevLens/backend/app/ai/analyzer.py)**: Houses the deterministic LLM analysis service.
 
 ### Frontend Refactored Layout
 The monolithic React layout in `frontend/src/App.jsx` has been divided into reusable components and service modules:
 
-* **[cn.js](file:///d:/Side Projects/utility-projects/DevLens/frontend/src/utils/cn.js)**: Merges CSS classes using `clsx` and `tailwind-merge`.
-* **[api.js](file:///d:/Side Projects/utility-projects/DevLens/frontend/src/services/api.js)**: Encapsulates async backend fetch calls.
-* **[UTCClock.jsx](file:///d:/Side Projects/utility-projects/DevLens/frontend/src/components/UTCClock.jsx)**: System clock UI display.
-* **[NavigationHeader.jsx](file:///d:/Side Projects/utility-projects/DevLens/frontend/src/components/NavigationHeader.jsx)**: Global namespace header.
-* **[AnimatedScore.jsx](file:///d:/Side Projects/utility-projects/DevLens/frontend/src/components/AnimatedScore.jsx)**: Responsive scoring animation element.
-* **[Badge.jsx](file:///d:/Side Projects/utility-projects/DevLens/frontend/src/components/Badge.jsx)**: Recruiter evaluation rating badges.
-* **[Card.jsx](file:///d:/Side Projects/utility-projects/DevLens/frontend/src/components/Card.jsx)**: Glassmorphic bento blocks.
-* **[PremiumButton.jsx](file:///d:/Side Projects/utility-projects/DevLens/frontend/src/components/PremiumButton.jsx)**: Framer Motion button elements.
-* **[TerminalLoader.jsx](file:///d:/Side Projects/utility-projects/DevLens/frontend/src/components/TerminalLoader.jsx)**: CLI logging animation screen.
-* **[ChecklistItem.jsx](file:///d:/Side Projects/utility-projects/DevLens/frontend/src/components/ChecklistItem.jsx)**: Collapsible task items.
+* **[cn.js](../../../../../Side Projects/utility-projects/DevLens/frontend/src/utils/cn.js)**: Merges CSS classes using `clsx` and `tailwind-merge`.
+* **[api.js](../../../../../Side Projects/utility-projects/DevLens/frontend/src/services/api.js)**: Encapsulates async backend fetch calls.
+* **[UTCClock.jsx](../../../../../Side Projects/utility-projects/DevLens/frontend/src/components/UTCClock.jsx)**: System clock UI display.
+* **[NavigationHeader.jsx](../../../../../Side Projects/utility-projects/DevLens/frontend/src/components/NavigationHeader.jsx)**: Global namespace header.
+* **[AnimatedScore.jsx](../../../../../Side Projects/utility-projects/DevLens/frontend/src/components/AnimatedScore.jsx)**: Responsive scoring animation element.
+* **[Badge.jsx](../../../../../Side Projects/utility-projects/DevLens/frontend/src/components/Badge.jsx)**: Recruiter evaluation rating badges.
+* **[Card.jsx](../../../../../Side Projects/utility-projects/DevLens/frontend/src/components/Card.jsx)**: Glassmorphic bento blocks.
+* **[PremiumButton.jsx](../../../../../Side Projects/utility-projects/DevLens/frontend/src/components/PremiumButton.jsx)**: Framer Motion button elements.
+* **[TerminalLoader.jsx](../../../../../Side Projects/utility-projects/DevLens/frontend/src/components/TerminalLoader.jsx)**: CLI logging animation screen.
+* **[ChecklistItem.jsx](../../../../../Side Projects/utility-projects/DevLens/frontend/src/components/ChecklistItem.jsx)**: Collapsible task items.
 
 ---
 
@@ -47,3 +47,4 @@ The monolithic React layout in `frontend/src/App.jsx` has been divided into reus
 * **Verification Status**:
   * Python modules compiled successfully.
   * Vite production build succeeded with `dist/assets/index` bundle mapping.
+

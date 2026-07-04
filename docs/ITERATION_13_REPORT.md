@@ -14,19 +14,21 @@ This report summarizes the deliverables, architectural changes, and validation r
 ---
 
 ## 2. Deliverables Added
-- [backend/app/cli/main.py](file:///d:/Side%20Projects/utility-projects/DevLens/backend/app/cli/main.py): Root entrypoint.
-- [backend/app/cli/exceptions.py](file:///d:/Side%20Projects/utility-projects/DevLens/backend/app/cli/exceptions.py): Custom exceptions and exit code mapping.
-- [backend/app/cli/client.py](file:///d:/Side%20Projects/utility-projects/DevLens/backend/app/cli/client.py): API communication layer.
-- [backend/app/cli/formatter.py](file:///d:/Side%20Projects/utility-projects/DevLens/backend/app/cli/formatter.py): Terminal stdout formatting manager.
-- [backend/app/cli/output.py](file:///d:/Side%20Projects/utility-projects/DevLens/backend/app/cli/output.py): Scorecards and console layouts.
-- [backend/app/cli/commands/](file:///d:/Side%20Projects/utility-projects/DevLens/backend/app/cli/commands/): CLI subcommand implementations.
-- [docs/CLI_GUIDE.md](file:///d:/Side%20Projects/utility-projects/DevLens/docs/CLI_GUIDE.md): CLI onboarding guide.
-- [docs/CLI_REFERENCE.md](file:///d:/Side%20Projects/utility-projects/DevLens/docs/CLI_REFERENCE.md): Complete commands reference sheet.
-- [docs/CLI_CONFIGURATION.md](file:///d:/Side%20Projects/utility-projects/DevLens/docs/CLI_CONFIGURATION.md): CI/CD automation & configuration settings.
+- [backend/app/cli/main.py](../backend/app/cli/main.py): Root entrypoint.
+- [backend/app/cli/exceptions.py](../backend/app/cli/exceptions.py): Custom exceptions and exit code mapping.
+- [backend/app/cli/client.py](../backend/app/cli/client.py): API communication layer.
+- [backend/app/cli/formatter.py](../backend/app/cli/formatter.py): Terminal stdout formatting manager.
+- [backend/app/cli/output.py](../backend/app/cli/output.py): Scorecards and console layouts.
+- [backend/app/cli/commands/](../backend/app/cli/commands/): CLI subcommand implementations.
+- [docs/CLI_GUIDE.md](./CLI_GUIDE.md): CLI onboarding guide.
+- [docs/CLI_REFERENCE.md](./CLI_REFERENCE.md): Complete commands reference sheet.
+- [docs/CLI_CONFIGURATION.md](./CLI_CONFIGURATION.md): CI/CD automation & configuration settings.
 
 ---
 
 ## 3. Verification & Regression Checks
-- **New Unit Tests**: Created [backend/tests/test_cli.py](file:///d:/Side%20Projects/utility-projects/DevLens/backend/tests/test_cli.py) covering config precedence, offline directory crawling, mock API client requests, and CLI subcommands.
+- **New Unit Tests**: Created [backend/tests/test_cli.py](../backend/tests/test_cli.py) covering config precedence, offline directory crawling, mock API client requests, and CLI subcommands.
 - **Logging Resiliency**: Isolated log outputs from CliRunner execution results to ensure JSON and score-only parsing methods remain clean.
 - **Full Verification Run**: Verified that all **71 backend and CLI unit tests** pass successfully.
+
+

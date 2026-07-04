@@ -6,11 +6,11 @@ This report documents the structural refactors, production integrations, and tes
 
 ## 📂 Hardened Modules
 
-* **[github.py](file:///d:/Side Projects/utility-projects/DevLens/backend/app/models/github.py)**: Defined the `RepositorySnapshot` Pydantic DTO mapping data contracts clearly.
-* **[builder.py](file:///d:/Side Projects/utility-projects/DevLens/backend/app/rie/builder.py)**: Added `EvidenceGraphBuilder` separating data parsing from orchestration.
-* **[mapper.py](file:///d:/Side Projects/utility-projects/DevLens/backend/app/services/mapper.py)**: Added `AuditResponseMapper` formatting internal V3 results back to V2 JSON clients.
-* **[audit.py](file:///d:/Side Projects/utility-projects/DevLens/backend/app/services/audit.py)**: Enabled constructor dependency injections for clients and pipelines.
-* **[queue.py](file:///d:/Side Projects/utility-projects/DevLens/backend/app/jobs/queue.py)**: Enforced strict connection failures in production environments.
+* **[github.py](../../../../../Side Projects/utility-projects/DevLens/backend/app/models/github.py)**: Defined the `RepositorySnapshot` Pydantic DTO mapping data contracts clearly.
+* **[builder.py](../../../../../Side Projects/utility-projects/DevLens/backend/app/rie/builder.py)**: Added `EvidenceGraphBuilder` separating data parsing from orchestration.
+* **[mapper.py](../../../../../Side Projects/utility-projects/DevLens/backend/app/services/mapper.py)**: Added `AuditResponseMapper` formatting internal V3 results back to V2 JSON clients.
+* **[audit.py](../../../../../Side Projects/utility-projects/DevLens/backend/app/services/audit.py)**: Enabled constructor dependency injections for clients and pipelines.
+* **[queue.py](../../../../../Side Projects/utility-projects/DevLens/backend/app/jobs/queue.py)**: Enforced strict connection failures in production environments.
 
 ---
 
@@ -37,3 +37,4 @@ graph TD
 All refactored test validations run and pass successfully:
 * **Command**: `..\venv\Scripts\python -m unittest discover tests`
 * **Output**: `Ran 33 tests - OK`
+

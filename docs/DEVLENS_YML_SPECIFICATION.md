@@ -64,7 +64,7 @@ spec:
 ---
 
 ## JSON Schema Validation
-A JSON Schema is published at [devlens.schema.json](file:///d:/Side Projects/utility-projects/DevLens/backend/app/schemas/devlens.schema.json).
+A JSON Schema is published at [devlens.schema.json](../../../../../Side Projects/utility-projects/DevLens/backend/app/schemas/devlens.schema.json).
 Add the following parameter to your workspace settings to map IDE validation:
 ```json
 "json.schemas": [
@@ -73,7 +73,9 @@ Add the following parameter to your workspace settings to map IDE validation:
       ".devlens.yml",
       ".devlens.yaml"
     ],
-    "url": "http://localhost:8000/app/schemas/devlens.schema.json"
+    "url": "https://raw.githubusercontent.com/iuttkarshh0409/DevLens-v3/main/backend/app/schemas/devlens.schema.json"
   }
 ]
 ```
+
+

@@ -7,9 +7,9 @@ This report documents the design, architecture, and validation of the automated 
 ## 📂 Benchmark Subsystem Modules
 All files reside in the `app/benchmark/` package:
 
-* **[models.py](file:///d:/Side Projects/utility-projects/DevLens/backend/app/benchmark/models.py)**: Defines target expectations (`ExpectedBenchmark`), single runner assertions (`BenchmarkResult`), and compiled reports (`BenchmarkReport`).
-* **[golden.py](file:///d:/Side Projects/utility-projects/DevLens/backend/app/benchmark/golden.py)**: Holds profiles and simulated evidence graphs for various codebases (Excellent portfolio, Tutorial clone, Dockerized app).
-* **[runner.py](file:///d:/Side Projects/utility-projects/DevLens/backend/app/benchmark/runner.py)**: Compares live audit results against golden expectations, reporting precision and performance metrics.
+* **[models.py](../../../../../Side Projects/utility-projects/DevLens/backend/app/benchmark/models.py)**: Defines target expectations (`ExpectedBenchmark`), single runner assertions (`BenchmarkResult`), and compiled reports (`BenchmarkReport`).
+* **[golden.py](../../../../../Side Projects/utility-projects/DevLens/backend/app/benchmark/golden.py)**: Holds profiles and simulated evidence graphs for various codebases (Excellent portfolio, Tutorial clone, Dockerized app).
+* **[runner.py](../../../../../Side Projects/utility-projects/DevLens/backend/app/benchmark/runner.py)**: Compares live audit results against golden expectations, reporting precision and performance metrics.
 
 ---
 
@@ -35,3 +35,4 @@ graph TD
 All test cases for the benchmark assertions and regression engines run locally as part of CI pipelines:
 * **Command**: `python -m unittest discover tests`
 * **Output**: `Ran 12 tests - OK`
+

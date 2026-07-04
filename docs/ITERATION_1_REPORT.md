@@ -7,11 +7,11 @@ This report documents the design, architecture, and validation of the determinis
 ## 📦 Newly Created Modules
 We added a new package `app/rie/` alongside the schema contract `models/analysis.py`:
 
-* **[analysis.py](file:///d:/Side Projects/utility-projects/DevLens/backend/app/models/analysis.py)**: Defines all Pydantic dataclass contracts for `EvidenceGraph`, `AnalyzerResult`, and `RepositoryAnalysis`.
-* **[base.py](file:///d:/Side Projects/utility-projects/DevLens/backend/app/rie/base.py)**: Holds abstract definitions of `BaseAnalyzer` and `AnalyzerContext`.
-* **[registry.py](file:///d:/Side Projects/utility-projects/DevLens/backend/app/rie/registry.py)**: Orchestrates priority-sorted analyzer registers.
-* **[analyzers.py](file:///d:/Side Projects/utility-projects/DevLens/backend/app/rie/analyzers.py)**: Holds 10 distinct, deterministic code and document validation engines.
-* **[orchestrator.py](file:///d:/Side Projects/utility-projects/DevLens/backend/app/rie/orchestrator.py)**: Feeds data into the graph, runs analyzers, and outputs results.
+* **[analysis.py](../../../../../Side Projects/utility-projects/DevLens/backend/app/models/analysis.py)**: Defines all Pydantic dataclass contracts for `EvidenceGraph`, `AnalyzerResult`, and `RepositoryAnalysis`.
+* **[base.py](../../../../../Side Projects/utility-projects/DevLens/backend/app/rie/base.py)**: Holds abstract definitions of `BaseAnalyzer` and `AnalyzerContext`.
+* **[registry.py](../../../../../Side Projects/utility-projects/DevLens/backend/app/rie/registry.py)**: Orchestrates priority-sorted analyzer registers.
+* **[analyzers.py](../../../../../Side Projects/utility-projects/DevLens/backend/app/rie/analyzers.py)**: Holds 10 distinct, deterministic code and document validation engines.
+* **[orchestrator.py](../../../../../Side Projects/utility-projects/DevLens/backend/app/rie/orchestrator.py)**: Feeds data into the graph, runs analyzers, and outputs results.
 
 ---
 
@@ -51,3 +51,4 @@ All RIE subsystems are fully tested and run independently of any LLM provider or
 
 ## 🚀 Future Integration Strategy
 In **Iteration 2**, the scoring algorithms and AI narrative generators will consume this structured `RepositoryAnalysis` schema, ensuring that LLM evaluations remain locked to deterministic evidence.
+

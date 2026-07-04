@@ -6,9 +6,9 @@ This report documents the design, architecture, and validation of the asynchrono
 
 ## 📂 Subsystem Modules
 
-* **[models.py](file:///d:/Side Projects/utility-projects/DevLens/backend/app/jobs/models.py)**: Defines job statuses (`JobStatus`), payload details (`AuditJob`), and outcome structures (`JobResult`).
-* **[queue.py](file:///d:/Side Projects/utility-projects/DevLens/backend/app/jobs/queue.py)**: Declares the queue interfaces (`BaseQueue`) and implements active (`RedisQueue`) and fallback/test (`InMemoryQueue`) backends.
-* **[worker.py](file:///d:/Side Projects/utility-projects/DevLens/backend/app/jobs/worker.py)**: Implements the loop process dequeuing tasks and running audits.
+* **[models.py](../../../../../Side Projects/utility-projects/DevLens/backend/app/jobs/models.py)**: Defines job statuses (`JobStatus`), payload details (`AuditJob`), and outcome structures (`JobResult`).
+* **[queue.py](../../../../../Side Projects/utility-projects/DevLens/backend/app/jobs/queue.py)**: Declares the queue interfaces (`BaseQueue`) and implements active (`RedisQueue`) and fallback/test (`InMemoryQueue`) backends.
+* **[worker.py](../../../../../Side Projects/utility-projects/DevLens/backend/app/jobs/worker.py)**: Implements the loop process dequeuing tasks and running audits.
 
 ---
 
@@ -38,3 +38,4 @@ The queue subsystem exposes active statistics:
 All test cases for queue operations, worker retries, and asynchronous webhook handshakes are passing successfully:
 * **Command**: `..\venv\Scripts\python -m unittest discover tests`
 * **Output**: `Ran 33 tests - OK`
+

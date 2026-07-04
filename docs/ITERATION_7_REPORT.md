@@ -6,8 +6,8 @@ This report documents the design, security, and verification of the synchronous 
 
 ## 📂 Subsystem Modules
 
-* **[webhook.py](file:///d:/Side Projects/utility-projects/DevLens/backend/app/models/webhook.py)**: Contains Pydantic event models (e.g. `PushEvent`, `PullRequestEvent`, `InstallationEvent`).
-* **[router.py](file:///d:/Side Projects/utility-projects/DevLens/backend/app/webhooks/router.py)**: Exposes the `POST /github/webhook` route, executes signature validations, and dispatches callbacks.
+* **[webhook.py](../../../../../Side Projects/utility-projects/DevLens/backend/app/models/webhook.py)**: Contains Pydantic event models (e.g. `PushEvent`, `PullRequestEvent`, `InstallationEvent`).
+* **[router.py](../../../../../Side Projects/utility-projects/DevLens/backend/app/webhooks/router.py)**: Exposes the `POST /github/webhook` route, executes signature validations, and dispatches callbacks.
 
 ---
 
@@ -35,3 +35,4 @@ graph TD
 All test suites (verifying ping responses, signature mismatches, skip configurations, and unknown filters) run successfully:
 * **Command**: `..\venv\Scripts\python -m unittest discover tests`
 * **Output**: `Ran 28 tests - OK`
+

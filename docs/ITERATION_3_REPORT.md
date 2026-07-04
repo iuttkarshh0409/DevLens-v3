@@ -7,10 +7,10 @@ This report documents the design, architecture, and validation of the **AI Narra
 ## 📂 Narrative Engine & Pipeline Modules
 All files reside in their designated package paths:
 
-* **[audit.py](file:///d:/Side Projects/utility-projects/DevLens/backend/app/models/audit.py)**: Houses the central data schema declarations for `AuditReport`, `AuditMetadata`, `NarrativeSection`, and `ExecutionSummary`.
-* **[provider.py](file:///d:/Side Projects/utility-projects/DevLens/backend/app/ai/provider.py)**: Abstracts AI API providers behind `BaseAIProvider` so Groq, OpenAI, or local engines can be swapped.
-* **[narrative.py](file:///d:/Side Projects/utility-projects/DevLens/backend/app/ai/narrative.py)**: Manages role prompts and enforces response structure and verification checks.
-* **[pipeline.py](file:///d:/Side Projects/utility-projects/DevLens/backend/app/rie/pipeline.py)**: Combines RIE, scoring, and narrative into a single `execute_audit` pipeline.
+* **[audit.py](../../../../../Side Projects/utility-projects/DevLens/backend/app/models/audit.py)**: Houses the central data schema declarations for `AuditReport`, `AuditMetadata`, `NarrativeSection`, and `ExecutionSummary`.
+* **[provider.py](../../../../../Side Projects/utility-projects/DevLens/backend/app/ai/provider.py)**: Abstracts AI API providers behind `BaseAIProvider` so Groq, OpenAI, or local engines can be swapped.
+* **[narrative.py](../../../../../Side Projects/utility-projects/DevLens/backend/app/ai/narrative.py)**: Manages role prompts and enforces response structure and verification checks.
+* **[pipeline.py](../../../../../Side Projects/utility-projects/DevLens/backend/app/rie/pipeline.py)**: Combines RIE, scoring, and narrative into a single `execute_audit` pipeline.
 
 ---
 
@@ -43,3 +43,4 @@ All test cases for the provider interface, narrative parsers, validation rules, 
 
 ## 🚀 Future Route Integration
 In **Iteration 4**, this complete, unified library will be connected to the public FastAPI routing layer to replace the original V2 logic.
+
