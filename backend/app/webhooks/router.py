@@ -92,7 +92,7 @@ async def receive_webhook(
                 return {"status": "skipped", "reason": "Archived repo"}
             
             if event.action in ["opened", "reopened", "synchronize"]:
-                owner = event.repository.owner.login
+                owner = event.repository.owner.login if event.repository.owner else event.repository.full_name.split("/")[0]
                 repo = event.repository.name
                 pull_number = event.number
                 head_sha = event.pull_request.head.sha
@@ -152,7 +152,7 @@ async def receive_webhook(
         elif x_github_event == "check_suite":
             event = CheckSuiteEvent(**data)
             if event.action in ["requested", "rerequested"]:
-                owner = event.repository.owner.login
+                owner = event.repository.owner.login if event.repository.owner else event.repository.full_name.split("/")[0]
                 repo = event.repository.name
                 head_sha = event.check_suite.head_sha
                 installation_id = event.installation.id if event.installation else None

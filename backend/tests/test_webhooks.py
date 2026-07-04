@@ -178,5 +178,44 @@ class TestWebhooks(unittest.TestCase):
         self.assertEqual(check_suite_event.check_suite.id, 456)
         self.assertEqual(check_suite_event.installation.id, 144438146)
 
+    @patch("app.webhooks.router.GITHUB_WEBHOOK_SECRET", "test_webhook_secret_key")
+    @patch("app.services.github.status_service.StatusService.post_pending_status", new_callable=AsyncMock)
+    def test_check_suite_event_success(self, mock_post_status):
+        payload_data = {
+            "action": "requested",
+            "check_suite": {
+                "id": 100,
+                "status": "queued",
+                "conclusion": None,
+                "head_sha": "abcdef123456"
+            },
+            "repository": {
+                "id": 12,
+                "name": "DevLens",
+                "full_name": "owner/DevLens",
+                "private": False,
+                "fork": False,
+                "archived": False,
+                "owner": {
+                    "login": "owner"
+                }
+            },
+            "installation": {
+                "id": 144438146,
+                "node_id": "MDIzOkluc3RhbGxhdGlvbjE0NDQzODE0Ng=="
+            }
+        }
+        payload = json.dumps(payload_data).encode("utf-8")
+        sig = self.compute_signature(payload)
+        headers = {
+            "X-GitHub-Event": "check_suite",
+            "X-GitHub-Delivery": "delivery-8899",
+            "X-Hub-Signature-256": sig
+        }
+        res = self.client.post("/github/webhook", content=payload, headers=headers)
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json()["status"], "enqueued")
+        mock_post_status.assert_called_once_with("owner", "DevLens", "abcdef123456")
+
 if __name__ == "__main__":
     unittest.main()

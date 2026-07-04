@@ -1,6 +1,9 @@
 from pydantic import BaseModel, Field
 from typing import Dict, Any, List, Optional
 
+class WebhookOwner(BaseModel):
+    login: str
+
 class WebhookRepository(BaseModel):
     id: int
     name: str
@@ -8,6 +11,7 @@ class WebhookRepository(BaseModel):
     private: bool
     fork: bool
     archived: bool = False
+    owner: Optional[WebhookOwner] = None
 
 class WebhookInstallation(BaseModel):
     id: int
