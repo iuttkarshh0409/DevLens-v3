@@ -127,5 +127,56 @@ class TestWebhooks(unittest.TestCase):
         for val in range(30):
             self.assertEqual(val, val)
 
+    def test_github_webhook_payload_deserialization_with_installation(self):
+        from app.models.webhook import PushEvent, CheckSuiteEvent
+        
+        # 1. Verify PushEvent deserializes successfully with installation having only id and node_id
+        push_payload = {
+            "ref": "refs/heads/main",
+            "before": "00000",
+            "after": "11111",
+            "repository": {
+                "id": 12,
+                "name": "DevLens",
+                "full_name": "owner/DevLens",
+                "private": False,
+                "fork": False,
+                "archived": False
+            },
+            "installation": {
+                "id": 144438146,
+                "node_id": "MDIzOkluc3RhbGxhdGlvbjE0NDQzODE0Ng=="
+            }
+        }
+        push_event = PushEvent.parse_obj(push_payload)
+        self.assertEqual(push_event.installation.id, 144438146)
+        self.assertIsNone(push_event.installation.account)
+
+        # 2. Verify CheckSuiteEvent deserializes successfully
+        check_suite_payload = {
+            "action": "completed",
+            "check_suite": {
+                "id": 456,
+                "status": "completed",
+                "conclusion": "success",
+                "head_sha": "22222"
+            },
+            "repository": {
+                "id": 12,
+                "name": "DevLens",
+                "full_name": "owner/DevLens",
+                "private": False,
+                "fork": False,
+                "archived": False
+            },
+            "installation": {
+                "id": 144438146,
+                "node_id": "MDIzOkluc3RhbGxhdGlvbjE0NDQzODE0Ng=="
+            }
+        }
+        check_suite_event = CheckSuiteEvent.parse_obj(check_suite_payload)
+        self.assertEqual(check_suite_event.check_suite.id, 456)
+        self.assertEqual(check_suite_event.installation.id, 144438146)
+
 if __name__ == "__main__":
     unittest.main()

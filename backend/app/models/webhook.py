@@ -11,7 +11,7 @@ class WebhookRepository(BaseModel):
 
 class WebhookInstallation(BaseModel):
     id: int
-    account: Dict[str, Any]
+    account: Optional[Dict[str, Any]] = None
 
 class PushEvent(BaseModel):
     ref: str
