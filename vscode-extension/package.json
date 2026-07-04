@@ -1,0 +1,120 @@
+{
+  "name": "devlens",
+  "displayName": "DevLens Official VS Code Extension",
+  "description": "IDE Integration for Automated Repository Auditing, Compliance Scoring, and Health Telemetry",
+  "version": "1.0.0",
+  "publisher": "devlens",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Linters",
+    "Other"
+  ],
+  "keywords": [
+    "audit",
+    "code quality",
+    "compliance",
+    "metrics",
+    "telemetry"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "18.x",
+    "@typescript-eslint/eslint-plugin": "^6.19.1",
+    "@typescript-eslint/parser": "^6.19.1",
+    "eslint": "^8.56.0",
+    "typescript": "^5.3.3",
+    "@vscode/test-electron": "^2.3.9"
+  },
+  "contributes": {
+    "configuration": {
+      "title": "DevLens Configuration",
+      "properties": {
+        "devlens.endpoint": {
+          "type": "string",
+          "default": "http://localhost:8000",
+          "description": "The URL of the DevLens API backend server."
+        },
+        "devlens.token": {
+          "type": "string",
+          "default": "",
+          "description": "DevLens Personal Access Token (PAT) for API operations."
+        },
+        "devlens.offlinePreferred": {
+          "type": "boolean",
+          "default": true,
+          "description": "Prefer local offline execution through DevLens CLI over online API requests."
+        },
+        "devlens.autoAuditOnOpen": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically run a DevLens audit when opening a workspace."
+        },
+        "devlens.showStatusBar": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the DevLens quality scorecard in the VS Code status bar."
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "devlens.audit",
+        "title": "DevLens: Audit Workspace (Interactive)"
+      },
+      {
+        "command": "devlens.offlineAudit",
+        "title": "DevLens: Run Local Offline Audit"
+      },
+      {
+        "command": "devlens.viewAnalytics",
+        "title": "DevLens: Show Health Telemetry"
+      },
+      {
+        "command": "devlens.login",
+        "title": "DevLens: Configure PAT Authentication Token"
+      },
+      {
+        "command": "devlens.logout",
+        "title": "DevLens: Logout (Clear Token)"
+      },
+      {
+        "command": "devlens.openReport",
+        "title": "DevLens: Display Webview Audit Dashboard"
+      },
+      {
+        "command": "devlens.refresh",
+        "title": "DevLens: Refresh Scorecard State"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "devlens-view",
+          "title": "DevLens",
+          "icon": "$(shield)"
+        }
+      ]
+    },
+    "views": {
+      "devlens-view": [
+        {
+          "id": "devlensExplorer",
+          "name": "DevLens Scorecard Summary"
+        }
+      ]
+    }
+  }
+}
