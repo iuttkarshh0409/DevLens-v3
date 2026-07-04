@@ -38,3 +38,16 @@ class TestPerformanceOptimizations(unittest.TestCase):
         breaker.record_failure()
         
         self.assertFalse(breaker.can_execute())
+
+    def test_root_endpoint(self):
+        from fastapi.testclient import TestClient
+        from app.main import app
+        client = TestClient(app)
+        response = client.get("/")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["name"], "DevLens API")
+        self.assertEqual(data["version"], "3.0.0")
+        self.assertEqual(data["status"], "healthy")
+        self.assertEqual(data["docs"], "/docs")
+        self.assertEqual(data["openapi"], "/openapi.json")

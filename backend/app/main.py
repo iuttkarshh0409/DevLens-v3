@@ -77,6 +77,16 @@ async def log_requests(request: Request, call_next):
     return response
 
 # Integrated Endpoints
+@app.get("/")
+async def root():
+    return {
+        "name": "DevLens API",
+        "version": "3.0.0",
+        "status": "healthy",
+        "docs": "/docs",
+        "openapi": "/openapi.json"
+    }
+
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "service": "DevLens Analysis Engine"}

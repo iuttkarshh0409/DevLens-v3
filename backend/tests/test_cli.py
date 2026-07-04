@@ -228,7 +228,7 @@ class TestDevLensCLI(unittest.TestCase):
         
         result = runner.invoke(app, ["version"])
         self.assertEqual(result.exit_code, 0)
-        self.assertIn("DevLens CLI 1.0.0", result.output)
+        self.assertIn("DevLens CLI 3.0.0", result.output)
         self.assertIn("Server:", result.output)
         self.assertIn("DevLens Backend 3.0.0", result.output)
         self.assertIn("API:\nv1", result.output)
