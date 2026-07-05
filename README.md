@@ -35,34 +35,131 @@ DevLens V3 is organized as a single repository containing the backend services, 
 
 ```text
 DevLens/
-|-- backend/
-|   |-- app/
-|   |   |-- api/
-|   |   |-- cli/
-|   |   |-- core/
-|   |   |-- database/
-|   |   |-- github/
-|   |   |-- jobs/
-|   |   |-- observability/
-|   |   |-- rie/
-|   |   |-- services/
-|   |   |-- webhooks/
-|   |   `-- main.py
-|   |-- alembic/
-|   |-- tests/
-|   |-- Dockerfile
-|   `-- pyproject.toml
-|-- frontend/
-|   |-- src/
-|   `-- package.json
-|-- vscode-extension/
-|   |-- src/
-|   |-- out/
-|   `-- package.json
-|-- docs/
-|-- docker-compose.yml
-|-- run_e2e_compose.py
-`-- README.md
+│
+├── backend/
+│   ├── app/
+│   │   ├── api/
+│   │   │   ├── routes/
+│   │   │   ├── dependencies/
+│   │   │   ├── middleware/
+│   │   │   ├── schemas/
+│   │   │   └── __init__.py
+│   │   │
+│   │   ├── core/
+│   │   │   ├── config.py
+│   │   │   ├── security.py
+│   │   │   ├── logging.py
+│   │   │   ├── exceptions.py
+│   │   │   └── constants.py
+│   │   │
+│   │   ├── database/
+│   │   │   ├── models/
+│   │   │   ├── repositories/
+│   │   │   ├── migrations/
+│   │   │   ├── session.py
+│   │   │   └── base.py
+│   │   │
+│   │   ├── integrations/
+│   │   │   ├── github/
+│   │   │   ├── vscode/
+│   │   │   ├── slack/
+│   │   │   └── ...
+│   │   │
+│   │   ├── services/
+│   │   │   ├── analysis/
+│   │   │   ├── reporting/
+│   │   │   ├── indexing/
+│   │   │   ├── recommendations/
+│   │   │   └── notifications/
+│   │   │
+│   │   ├── workers/
+│   │   │   ├── jobs/
+│   │   │   ├── scheduler.py
+│   │   │   └── queue.py
+│   │   │
+│   │   ├── webhooks/
+│   │   │   ├── github.py
+│   │   │   └── handlers.py
+│   │   │
+│   │   ├── cli/
+│   │   │
+│   │   ├── observability/
+│   │   │   ├── metrics.py
+│   │   │   ├── tracing.py
+│   │   │   └── health.py
+│   │   │
+│   │   ├── utils/
+│   │   │
+│   │   └── main.py
+│   │
+│   ├── alembic/
+│   ├── tests/
+│   │   ├── unit/
+│   │   ├── integration/
+│   │   ├── e2e/
+│   │   └── fixtures/
+│   │
+│   ├── scripts/
+│   ├── Dockerfile
+│   ├── pyproject.toml
+│   └── .env.example
+│
+├── frontend/
+│   ├── public/
+│   ├── src/
+│   │   ├── api/
+│   │   ├── assets/
+│   │   ├── components/
+│   │   ├── features/
+│   │   ├── hooks/
+│   │   ├── layouts/
+│   │   ├── pages/
+│   │   ├── services/
+│   │   ├── stores/
+│   │   ├── styles/
+│   │   ├── types/
+│   │   └── utils/
+│   │
+│   └── package.json
+│
+├── vscode-extension/
+│   ├── src/
+│   │   ├── commands/
+│   │   ├── providers/
+│   │   ├── panels/
+│   │   ├── services/
+│   │   ├── telemetry/
+│   │   └── extension.ts
+│   │
+│   ├── media/
+│   ├── resources/
+│   ├── out/
+│   └── package.json
+│
+├── docs/
+│   ├── architecture/
+│   ├── api/
+│   ├── design/
+│   ├── deployment/
+│   └── assets/
+│
+├── infrastructure/
+│   ├── docker/
+│   ├── nginx/
+│   ├── monitoring/
+│   └── scripts/
+│
+├── .github/
+│   ├── workflows/
+│   ├── ISSUE_TEMPLATE/
+│   └── PULL_REQUEST_TEMPLATE.md
+│
+├── docker-compose.yml
+├── run_e2e_compose.py
+├── LICENSE
+├── CONTRIBUTING.md
+├── .gitignore
+└── README.md
 ```
 
 ## Getting Started
