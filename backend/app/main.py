@@ -17,6 +17,15 @@ from contextlib import asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup lifecycle hooks
     logger.info("Initializing DevLens Analysis API...")
+    try:
+        from app.database.connection import engine
+        from app.database.models import Base
+        logger.info("Initializing database tables...")
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        logger.info("Database tables initialized successfully.")
+    except Exception as e:
+        logger.error(f"Failed to initialize database tables: {str(e)}")
     yield
     # Shutdown lifecycle hooks
     logger.info("DevLens Shutting down services...")
